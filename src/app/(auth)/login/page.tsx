@@ -81,13 +81,6 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Demo credentials */}
-        <div className="text-xs text-gray-400 text-center space-y-1">
-          <p className="font-medium text-gray-500">Demo accounts (password shown):</p>
-          <p>admin@cleanpro.com · admin123</p>
-          <p>cleaner@cleanpro.com · cleaner123</p>
-          <p>client@example.com · client123</p>
-        </div>
       </div>
     </div>
   );
