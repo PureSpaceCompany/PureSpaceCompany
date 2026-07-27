@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
@@ -9,6 +9,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CleanPro – Cleaning Management",
   description: "Professional cleaning service management platform",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "CleanPro" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#111827",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
