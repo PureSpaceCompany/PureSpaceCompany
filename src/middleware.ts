@@ -6,18 +6,21 @@ export default withAuth(
     const role = (req.nextauth.token as any)?.role;
     const path = req.nextUrl.pathname;
 
+    const isCleanerRoute = path === "/cleaner" || path.startsWith("/cleaner/");
+    const isClientRoute  = path === "/client"  || path.startsWith("/client/");
+
     // Cleaner: only /cleaner/*
-    if (role === "CLEANER" && !path.startsWith("/cleaner")) {
+    if (role === "CLEANER" && !isCleanerRoute) {
       return NextResponse.redirect(new URL("/cleaner", req.url));
     }
 
     // Client: only /client/*
-    if (role === "CLIENT" && !path.startsWith("/client")) {
+    if (role === "CLIENT" && !isClientRoute) {
       return NextResponse.redirect(new URL("/client/bookings", req.url));
     }
 
-    // Admin/Manager: block cleaner and client routes
-    if (["ADMIN", "MANAGER"].includes(role) && (path.startsWith("/cleaner") || path.startsWith("/client"))) {
+    // Admin/Manager: block cleaner-only and client-only routes
+    if (["ADMIN", "MANAGER"].includes(role) && (isCleanerRoute || isClientRoute)) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
 
