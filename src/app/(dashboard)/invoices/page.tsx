@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass } from "@/components/ui/form-field";
 import { formatCurrency, formatDateTime, INVOICE_STATUS_COLOR, clientDisplayName, cn } from "@/lib/utils";
-import { Loader2, FileText, CheckCircle, Ban, FilePlus, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Loader2, FileText, CheckCircle, Ban, FilePlus, ChevronDown, ChevronUp, AlertCircle, Send, Mail } from "lucide-react";
 import { InvoicePDFButton, ClientStatementPDFButton, StatementJob } from "@/components/invoices/invoice-pdf";
 
 // ─── data fetching ────────────────────────────────────────────────────────────
@@ -98,6 +98,93 @@ function QuickGenerateModal({
   );
 }
 
+// ─── send invoice modal ───────────────────────────────────────────────────────
+
+function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => void }) {
+  const [email, setEmail] = useState(invoice._clientEmail ?? "");
+  const [result, setResult] = useState<{ paymentUrl: string; to: string } | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function send() {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to send");
+      setResult(json.data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Send Invoice by Email" size="sm">
+      <div className="space-y-4 p-1">
+        {result ? (
+          <div className="space-y-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center">
+              <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+              <p className="font-semibold text-emerald-800">Invoice sent!</p>
+              <p className="text-sm text-emerald-700 mt-1">Email delivered to <strong>{result.to}</strong></p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-xs text-gray-500 mb-1 font-medium">Payment link (for reference):</p>
+              <a href={result.paymentUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-blue-600 underline break-all">{result.paymentUrl}</a>
+            </div>
+            <div className="flex justify-end">
+              <Button size="sm" onClick={onClose}>Done</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 space-y-0.5">
+              <p className="font-semibold">{invoice.invoiceNumber} — {formatCurrency(Number(invoice.total))}</p>
+              <p className="text-blue-600">{invoice.job?.title}</p>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
+            )}
+
+            <FormField label="Send to email" description="Client will receive the invoice with a Pay Now button">
+              <div className="flex gap-2">
+                <Mail className="w-4 h-4 text-gray-400 mt-2.5 shrink-0" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="client@example.com"
+                  className={inputClass}
+                />
+              </div>
+            </FormField>
+
+            <p className="text-xs text-gray-400">
+              Stripe will securely process the payment. The invoice status will automatically update to Paid when completed.
+            </p>
+
+            <div className="flex justify-end gap-3 pt-1">
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button onClick={send} loading={loading} disabled={!email.trim()}>
+                <Send className="w-3.5 h-3.5 mr-1.5" /> Send Invoice
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function InvoicesPage() {
@@ -105,6 +192,7 @@ export default function InvoicesPage() {
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [generateJob, setGenerateJob] = useState<any>(null);
   const [voidTarget, setVoidTarget] = useState<any>(null);
+  const [sendTarget, setSendTarget] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<"" | "UNPAID" | "PAID" | "OVERDUE">("UNPAID");
 
   const { data: completedJobs = [], isLoading: jobsLoading } = useQuery({
@@ -146,7 +234,12 @@ export default function InvoicesPage() {
     const map = new Map<string, { client: any; jobs: any[] }>();
     for (const job of completedJobs) {
       const cid = job.clientId ?? job.client?.id ?? "unknown";
-      if (!map.has(cid)) map.set(cid, { client: job.client, jobs: [] });
+      if (!map.has(cid)) {
+        // Pull client email from any invoice for this client
+        const anyInv = allInvoices.find((i: any) => i.clientId === cid || i.client?.id === cid);
+        const clientEmail = anyInv?.client?.user?.email ?? "";
+        map.set(cid, { client: { ...job.client, _email: clientEmail }, jobs: [] });
+      }
       map.get(cid)!.jobs.push({ ...job, _invoice: invoiceByJobId[job.id] ?? null });
     }
     return Array.from(map.values()).sort((a, b) =>
@@ -360,6 +453,8 @@ export default function InvoicesPage() {
                           const isOverdue = inv?.status === "OVERDUE";
                           const needsAction = noInv || isDraft;
                           const amount = inv ? Number(inv.total) : Number(job.flatRate ?? 0);
+                          // Attach client email from group for send modal pre-fill
+                          const invWithEmail = inv ? { ...inv, job, _clientEmail: group.client?._email ?? "" } : null;
 
                           return (
                             <tr
@@ -414,25 +509,38 @@ export default function InvoicesPage() {
                                       {isDraft ? "Finalize" : "Invoice"}
                                     </Button>
                                   )}
-                                  {inv && (
+                                  {invWithEmail && (
                                     <>
+                                      {/* Send button always visible for unpaid invoices */}
+                                      {(isPending || isOverdue || isDraft) && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => setSendTarget(invWithEmail)}
+                                          className="text-blue-600 hover:bg-blue-50 h-7 px-2 text-xs font-medium"
+                                          title="Send invoice by email"
+                                        >
+                                          <Send className="w-3.5 h-3.5 mr-1" />
+                                          Send
+                                        </Button>
+                                      )}
                                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                        <InvoicePDFButton invoice={{ ...inv, job }} />
+                                        <InvoicePDFButton invoice={{ ...invWithEmail, job }} />
                                         {(isPending || isOverdue || isDraft) && (
                                           <Button
                                             variant="ghost" size="icon"
-                                            onClick={() => markPaid.mutate(inv.id)}
+                                            onClick={() => markPaid.mutate(invWithEmail.id)}
                                             loading={markPaid.isPending}
-                                            title="Mark as Paid"
+                                            title="Mark as Paid manually"
                                             className="text-green-600 hover:bg-green-50 w-7 h-7"
                                           >
                                             <CheckCircle className="w-3.5 h-3.5" />
                                           </Button>
                                         )}
-                                        {inv.status !== "VOID" && (
+                                        {invWithEmail.status !== "VOID" && (
                                           <Button
                                             variant="ghost" size="icon"
-                                            onClick={() => setVoidTarget(inv)}
+                                            onClick={() => setVoidTarget(invWithEmail)}
                                             title="Void"
                                             className="text-red-500 hover:bg-red-50 w-7 h-7"
                                           >
@@ -460,6 +568,10 @@ export default function InvoicesPage() {
       {/* Modals */}
       {generateJob && (
         <QuickGenerateModal job={generateJob} onClose={() => setGenerateJob(null)} />
+      )}
+
+      {sendTarget && (
+        <SendInvoiceModal invoice={sendTarget} onClose={() => setSendTarget(null)} />
       )}
 
       <ConfirmDialog
