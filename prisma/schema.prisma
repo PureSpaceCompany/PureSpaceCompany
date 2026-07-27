@@ -328,6 +328,32 @@ model AppSettings {
 }
 
 // ─────────────────────────────────────────
+// CONTACT REQUEST (from landing page)
+// ─────────────────────────────────────────
+
+enum ContactStatus {
+  NEW
+  READ
+  CONVERTED
+  ARCHIVED
+}
+
+model ContactRequest {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  status    ContactStatus @default(NEW)
+  notes     String?
+  jobId     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("contact_requests")
+}
+
+// ─────────────────────────────────────────
 // CHECKLIST TEMPLATE (reusable per service type)
 // ─────────────────────────────────────────
 

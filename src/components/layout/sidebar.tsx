@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Calendar, Briefcase, Users, UserCog,
-  FileText, Settings, LogOut, SprayCan, BarChart2, MapPin, Menu, X,
+  FileText, Settings, LogOut, SprayCan, BarChart2, MapPin, Menu, X, Inbox,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -19,6 +19,7 @@ const adminNav = [
   { href: "/properties", label: "Properties",icon: MapPin },
   { href: "/staff",      label: "Staff",     icon: UserCog },
   { href: "/invoices",   label: "Invoices",  icon: FileText },
+  { href: "/inbox",      label: "Inbox",     icon: Inbox },
   { href: "/reports",    label: "Reports",   icon: BarChart2 },
   { href: "/settings",   label: "Settings",  icon: Settings },
 ];
