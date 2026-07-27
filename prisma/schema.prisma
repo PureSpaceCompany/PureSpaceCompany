@@ -153,6 +153,9 @@ model Property {
   petNotes          String?
   specialNotes      String?
 
+  lat             Float?
+  lng             Float?
+
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
