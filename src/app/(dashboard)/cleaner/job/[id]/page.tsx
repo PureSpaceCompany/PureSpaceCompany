@@ -63,26 +63,66 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Location card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        <div className="flex items-start gap-2.5">
-          <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <p className="font-semibold text-gray-900">{job.client.firstName} {job.client.lastName}</p>
-            <p className="text-gray-600">{job.client.addressLine1}</p>
-            <p className="text-gray-600">{job.client.city}, {job.client.state} {job.client.zip}</p>
+      {(() => {
+        // Use property address if available, otherwise fall back to client address
+        const loc = (job as any).property ?? null;
+        const addr1   = loc ? loc.addressLine1  : job.client.addressLine1;
+        const addr2   = loc ? loc.addressLine2  : job.client.addressLine2;
+        const city    = loc ? loc.city          : job.client.city;
+        const state   = loc ? loc.state         : job.client.state;
+        const zip     = loc ? loc.zip           : job.client.zip;
+        const label   = loc ? loc.name          : [job.client.firstName, job.client.lastName].filter(Boolean).join(" ");
+        const entry   = loc ? loc.entryInstructions : job.client.entryInstructions;
+        const gate    = loc ? loc.gateCode      : null;
+        const pets    = loc ? loc.petNotes      : job.client.petNotes;
+        const notes   = loc ? loc.specialNotes  : job.client.specialNotes;
+
+        const fullAddress = [addr1, addr2, city, state, zip].filter(Boolean).join(", ");
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}`;
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-start gap-2.5">
+              <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0 text-sm">
+                {label && <p className="font-semibold text-gray-900">{label}</p>}
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-block"
+                >
+                  <p className="text-blue-600 group-hover:underline">{addr1}{addr2 ? `, ${addr2}` : ""}</p>
+                  <p className="text-blue-600 group-hover:underline">{city}, {state} {zip}</p>
+                  <span className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    <MapPin className="w-3 h-3" /> Open in Maps / GPS
+                  </span>
+                </a>
+              </div>
+            </div>
+            {gate && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-800">
+                <span className="font-semibold">Gate code: </span>{gate}
+              </div>
+            )}
+            {entry && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                <span className="font-semibold">Entry: </span>{entry}
+              </div>
+            )}
+            {pets && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <span className="font-semibold">Pets: </span>{pets}
+              </div>
+            )}
+            {notes && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
+                <span className="font-semibold">Notes: </span>{notes}
+              </div>
+            )}
           </div>
-        </div>
-        {job.client.entryInstructions && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-            <span className="font-semibold">Entry: </span>{job.client.entryInstructions}
-          </div>
-        )}
-        {job.client.petNotes && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-            <span className="font-semibold">Pets: </span>{job.client.petNotes}
-          </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Clock in/out or completion CTA */}
       {nextStatus && (
