@@ -37,9 +37,17 @@ export function ClientModal({ open, onClose, client }: ClientModalProps) {
 
   useEffect(() => {
     if (!open) return;
-    setForm(client ? { ...EMPTY, ...client } : { ...EMPTY });
+    if (client) {
+      // Only pull known form keys and coerce null DB values to "" so trim() is safe
+      const safe = Object.fromEntries(
+        Object.keys(EMPTY).map((k) => [k, client[k] ?? ""])
+      ) as typeof EMPTY;
+      setForm(safe);
+    } else {
+      setForm({ ...EMPTY });
+    }
     setErrors({});
-  }, [open]); // only reset when the modal opens, not on every client re-render
+  }, [open]);
 
   const mutation = useMutation({
     mutationFn: (data: any) => isEdit
@@ -72,7 +80,7 @@ export function ClientModal({ open, onClose, client }: ClientModalProps) {
     if (!validate()) return;
     // Convert empty strings to null so the API doesn't store ""
     const payload = Object.fromEntries(
-      Object.entries(form).map(([k, v]) => [k, v.trim() === "" ? null : v.trim()])
+      Object.entries(form).map(([k, v]) => [k, (v ?? "").trim() === "" ? null : (v ?? "").trim()])
     );
     mutation.mutate(payload);
   }
