@@ -1,0 +1,340 @@
+// Prisma schema — PostgreSQL
+// Run: npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  CLEANER
+  CLIENT
+}
+
+enum JobStatus {
+  UNASSIGNED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum ServiceType {
+  STANDARD
+  DEEP_CLEAN
+  MOVE_IN_OUT
+  POST_CONSTRUCTION
+  RECURRING
+  COMMERCIAL
+}
+
+enum RecurrenceRule {
+  ONCE
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+// ─────────────────────────────────────────
+// USER (Authentication + Role)
+// ─────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  role          Role
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  staffProfile  StaffProfile?
+  clientProfile ClientProfile?
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// STAFF PROFILE (Cleaners & Managers)
+// ─────────────────────────────────────────
+
+model StaffProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  hourlyRate   Decimal  @db.Decimal(10, 2)
+  skills       String[]
+  isActive     Boolean  @default(true)
+  availability Json?
+
+  assignedJobs JobAssignment[]
+  timesheets   Timesheet[]
+
+  @@map("staff_profiles")
+}
+
+// ─────────────────────────────────────────
+// CLIENT PROFILE
+// ─────────────────────────────────────────
+
+model ClientProfile {
+  id              String   @id @default(cuid())
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName       String?
+  lastName        String?
+  company         String?
+  phone           String?
+  avatarUrl       String?
+
+  // Default billing / contact address
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  state           String
+  zip             String
+  country         String   @default("US")
+
+  entryInstructions String?
+  gateCode          String?
+  petNotes          String?
+  specialNotes      String?
+
+  properties      Property[]
+  jobs            Job[]
+  invoices        Invoice[]
+
+  @@map("client_profiles")
+}
+
+// ─────────────────────────────────────────
+// PROPERTY (service location for a client)
+// ─────────────────────────────────────────
+
+model Property {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          ClientProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  name            String        // friendly label: "Downtown Office", "Unit 5A"
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  state           String
+  zip             String
+  country         String        @default("US")
+
+  entryInstructions String?
+  gateCode          String?
+  petNotes          String?
+  specialNotes      String?
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  jobs            Job[]
+
+  @@map("properties")
+}
+
+// ─────────────────────────────────────────
+// JOB
+// ─────────────────────────────────────────
+
+model Job {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          ClientProfile @relation(fields: [clientId], references: [id])
+
+  // Optional: which property this job is for
+  propertyId      String?
+  property        Property?     @relation(fields: [propertyId], references: [id])
+
+  title           String
+  serviceType     ServiceType
+  status          JobStatus     @default(UNASSIGNED)
+  recurrence      RecurrenceRule @default(ONCE)
+
+  scheduledStart  DateTime
+  scheduledEnd    DateTime
+  actualStart     DateTime?
+  actualEnd       DateTime?
+
+  notes           String?
+  internalNotes   String?
+
+  flatRate        Decimal?      @db.Decimal(10, 2)
+
+  assignments     JobAssignment[]
+  checklist       ChecklistItem[]
+  photos          JobPhoto[]
+  invoice         Invoice?
+  timesheets      Timesheet[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("jobs")
+}
+
+// ─────────────────────────────────────────
+// JOB ASSIGNMENT (many-to-many Job ↔ Staff)
+// ─────────────────────────────────────────
+
+model JobAssignment {
+  id           String       @id @default(cuid())
+  jobId        String
+  job          Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  staffId      String
+  staff        StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  isLead       Boolean      @default(false)
+  assignedAt   DateTime     @default(now())
+
+  @@unique([jobId, staffId])
+  @@map("job_assignments")
+}
+
+// ─────────────────────────────────────────
+// CHECKLIST ITEM
+// ─────────────────────────────────────────
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  label       String
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  completedBy String?
+  sortOrder   Int      @default(0)
+  notes       String?
+
+  @@map("checklist_items")
+}
+
+// ─────────────────────────────────────────
+// JOB PHOTO (before/after documentation)
+// ─────────────────────────────────────────
+
+model JobPhoto {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  url         String
+  caption     String?
+  isBefore    Boolean
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+
+  @@map("job_photos")
+}
+
+// ─────────────────────────────────────────
+// TIMESHEET (clock in/out per job per staff)
+// ─────────────────────────────────────────
+
+model Timesheet {
+  id          String       @id @default(cuid())
+  jobId       String
+  job         Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  staffId     String
+  staff       StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  clockIn     DateTime
+  clockOut    DateTime?
+  lat         Float?
+  lng         Float?
+  isApproved  Boolean      @default(false)
+
+  @@map("timesheets")
+}
+
+// ─────────────────────────────────────────
+// INVOICE
+// ─────────────────────────────────────────
+
+model Invoice {
+  id           String        @id @default(cuid())
+  jobId        String        @unique
+  job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  clientId     String
+  client       ClientProfile @relation(fields: [clientId], references: [id])
+
+  invoiceNumber String       @unique
+  status        InvoiceStatus @default(DRAFT)
+
+  subtotal      Decimal      @db.Decimal(10, 2)
+  taxRate       Decimal      @db.Decimal(5, 4) @default(0.0875)
+  taxAmount     Decimal      @db.Decimal(10, 2)
+  total         Decimal      @db.Decimal(10, 2)
+
+  issuedAt      DateTime?
+  dueAt         DateTime?
+  paidAt        DateTime?
+  paidAmount    Decimal?     @db.Decimal(10, 2)
+
+  notes         String?
+  lineItems     Json
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────
+// APP SETTINGS (single row, id = "default")
+// ─────────────────────────────────────────
+
+model AppSettings {
+  id                  String  @id @default("default")
+  companyName         String  @default("CleanPro Services")
+  supportEmail        String  @default("")
+  phone               String  @default("")
+  invoicePaymentDays  Int     @default(14)
+  invoiceNotes        String  @default("")
+
+  @@map("app_settings")
+}
+
+// ─────────────────────────────────────────
+// CHECKLIST TEMPLATE (reusable per service type)
+// ─────────────────────────────────────────
+
+model ChecklistTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  serviceType ServiceType
+  items       Json
+  isDefault   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  @@map("checklist_templates")
+}
