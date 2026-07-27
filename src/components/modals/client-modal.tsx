@@ -36,9 +36,10 @@ export function ClientModal({ open, onClose, client }: ClientModalProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!open) return;
     setForm(client ? { ...EMPTY, ...client } : { ...EMPTY });
     setErrors({});
-  }, [client, open]);
+  }, [open]); // only reset when the modal opens, not on every client re-render
 
   const mutation = useMutation({
     mutationFn: (data: any) => isEdit
