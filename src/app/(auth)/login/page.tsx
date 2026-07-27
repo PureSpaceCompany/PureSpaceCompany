@@ -1,13 +1,11 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SprayCan } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,15 +22,19 @@ export default function LoginPage() {
       redirect: false,
     });
 
-    setLoading(false);
-
     if (result?.error) {
+      setLoading(false);
       setError("Invalid email or password.");
       return;
     }
 
-    // Full reload so server reads the session and routes by role
-    window.location.href = "/";
+    // Read the session to get the role and redirect accordingly
+    const session = await getSession();
+    const role = (session?.user as any)?.role;
+
+    if (role === "CLEANER") window.location.href = "/cleaner";
+    else if (role === "CLIENT") window.location.href = "/client/bookings";
+    else window.location.href = "/admin";
   }
 
   return (
