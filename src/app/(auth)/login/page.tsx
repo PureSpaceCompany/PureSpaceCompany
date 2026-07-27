@@ -31,8 +31,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.refresh();
-    router.push("/");
+    // Full reload so server reads the session and routes by role
+    window.location.href = "/";
   }
 
   return (

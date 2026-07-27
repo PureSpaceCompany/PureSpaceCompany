@@ -25,7 +25,7 @@ const adminNav = [
 ];
 
 const cleanerNav = [
-  { href: "/cleaner", label: "My Jobs", icon: Briefcase },
+  { href: "/cleaner", label: "My Schedule", icon: Calendar },
 ];
 
 const clientNav = [
