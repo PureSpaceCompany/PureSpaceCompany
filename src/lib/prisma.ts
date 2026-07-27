@@ -3,21 +3,9 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  const client = new PrismaClient({
+  return new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
   });
-
-  // Neon free-tier suspends connections after inactivity — reconnect on first use
-  client.$connect().catch(() => {
-    // Silently ignore — Prisma will reconnect on the next query
-  });
-
-  return client;
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
