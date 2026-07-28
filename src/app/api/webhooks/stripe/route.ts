@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
-// Stripe requires the raw body to verify the signature
-export const config = { api: { bodyParser: false } };
+// Next.js App Router: disable body parsing so we get the raw text for signature verification
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();

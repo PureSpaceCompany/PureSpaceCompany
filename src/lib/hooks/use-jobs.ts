@@ -50,8 +50,8 @@ export function useUpdateJob() {
         body: JSON.stringify(data),
       }),
     onSuccess: (updated) => {
-      qc.invalidateQueries({ queryKey: ["jobs"] });
       qc.setQueryData(["jobs", updated.id], updated);
+      invalidateAll(qc);
     },
   });
 }
@@ -115,6 +115,15 @@ export function useCreateJob() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["jobs"] }),
+    onSuccess: () => invalidateAll(qc),
   });
+}
+
+function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["jobs"] });
+  qc.invalidateQueries({ queryKey: ["completed-jobs"] });
+  qc.invalidateQueries({ queryKey: ["invoices"] });
+  qc.invalidateQueries({ queryKey: ["schedule"] });
+  qc.invalidateQueries({ queryKey: ["my-jobs"] });
+  qc.invalidateQueries({ queryKey: ["clients"] });
 }
