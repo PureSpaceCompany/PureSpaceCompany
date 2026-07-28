@@ -192,6 +192,7 @@ model Job {
   internalNotes   String?
 
   flatRate        Decimal?      @db.Decimal(10, 2)
+  cleanerPay      Decimal?      @db.Decimal(10, 2)
 
   assignments     JobAssignment[]
   checklist       ChecklistItem[]

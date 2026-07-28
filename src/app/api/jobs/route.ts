@@ -15,6 +15,7 @@ const createJobSchema = z.object({
   scheduledEnd: z.string().datetime(),
   notes: z.string().optional(),
   flatRate: z.number().positive().optional(),
+  cleanerPay: z.number().min(0).optional().nullable(),
   templateId: z.string().optional(),
   checklistItems: z.array(z.string()).optional(),
   staffIds: z.array(z.string()).optional(),
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { clientId, propertyId, title, serviceType, recurrence, scheduledStart, scheduledEnd,
-      notes, flatRate, templateId, checklistItems, staffIds } = parsed.data;
+      notes, flatRate, cleanerPay, templateId, checklistItems, staffIds } = parsed.data;
 
     let items: { label: string; sortOrder: number }[] = [];
     if (templateId) {
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
         scheduledEnd: new Date(scheduledEnd),
         notes,
         flatRate,
+        cleanerPay: cleanerPay ?? null,
         status: staffIds?.length ? "ASSIGNED" : "UNASSIGNED",
         assignments: staffIds?.length
           ? { create: staffIds.map((sid, i) => ({ staffId: sid, isLead: i === 0 })) }

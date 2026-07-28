@@ -58,6 +58,7 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
     scheduledStart: "",
     scheduledEnd: "",
     flatRate: "",
+    cleanerPay: "",
     notes: "",
     staffIds: [] as string[],
     checklistItems: "",
@@ -82,6 +83,7 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
         scheduledStart: toLocalDatetime(job.scheduledStart),
         scheduledEnd: toLocalDatetime(job.scheduledEnd),
         flatRate: job.flatRate ? String(job.flatRate) : "",
+        cleanerPay: (job as any).cleanerPay ? String((job as any).cleanerPay) : "",
         notes: job.notes ?? "",
         staffIds: job.assignments?.map((a) => a.staffId) ?? [],
         checklistItems: job.checklist?.map((i) => i.label).join("\n") ?? "",
@@ -89,7 +91,7 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
       setTitleTouched(true); // editing an existing job — never overwrite its title
     } else {
       setForm({ clientId: "", propertyId: "", title: "", serviceType: "STANDARD", recurrence: "ONCE",
-        scheduledStart: "", scheduledEnd: "", flatRate: "", notes: "", staffIds: [], checklistItems: "" });
+        scheduledStart: "", scheduledEnd: "", flatRate: "", cleanerPay: "", notes: "", staffIds: [], checklistItems: "" });
       setTitleTouched(false);
     }
     setErrors({});
@@ -154,6 +156,7 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
       scheduledEnd: new Date(form.scheduledEnd).toISOString(),
       notes: form.notes || undefined,
       flatRate: form.flatRate ? parseFloat(form.flatRate) : undefined,
+      cleanerPay: form.cleanerPay ? parseFloat(form.cleanerPay) : null,
       staffIds: form.staffIds,
       checklistItems: form.checklistItems
         ? form.checklistItems.split("\n").map((l) => l.trim()).filter(Boolean)
@@ -232,12 +235,17 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             <input type="datetime-local" value={form.scheduledEnd} onChange={(e) => set("scheduledEnd", e.target.value)} className={inputClass} />
           </FormField>
 
-          <FormField label="Flat Rate / Amount Charged ($)" error={errors.flatRate}>
+          <FormField label="Client Charge ($)" error={errors.flatRate} description="Amount billed to the client">
             <input type="number" min="0" step="0.01" value={form.flatRate}
-              onChange={(e) => set("flatRate", e.target.value)} placeholder="e.g. 120.00" className={inputClass} />
+              onChange={(e) => set("flatRate", e.target.value)} placeholder="e.g. 200.00" className={inputClass} />
           </FormField>
 
-          <FormField label="Notes">
+          <FormField label="Cleaner Pay ($)" description="Amount paid to the cleaner for this job">
+            <input type="number" min="0" step="0.01" value={form.cleanerPay}
+              onChange={(e) => set("cleanerPay", e.target.value)} placeholder="e.g. 80.00" className={inputClass} />
+          </FormField>
+
+          <FormField label="Notes" className="sm:col-span-2">
             <input value={form.notes} onChange={(e) => set("notes", e.target.value)}
               placeholder="Any special instructions..." className={inputClass} />
           </FormField>

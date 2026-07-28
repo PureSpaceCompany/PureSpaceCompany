@@ -13,6 +13,7 @@ const updateJobSchema = z.object({
   actualEnd: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
   flatRate: z.number().optional().nullable(),
+  cleanerPay: z.number().min(0).optional().nullable(),
   staffIds: z.array(z.string()).optional(),
 });
 

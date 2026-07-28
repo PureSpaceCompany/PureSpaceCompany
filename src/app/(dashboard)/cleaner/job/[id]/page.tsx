@@ -10,7 +10,7 @@ import { JobChecklist } from "@/components/jobs/job-checklist";
 import { JobStatusBadge } from "@/components/jobs/job-status-badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
-import { MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Clock, CheckCircle, AlertCircle, Loader2, DollarSign } from "lucide-react";
 import { JobStatus } from "@/types";
 
 const NEXT_STATUS: Partial<Record<JobStatus, JobStatus>> = {
@@ -124,7 +124,22 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
         );
       })()}
 
-      {/* Clock in/out or completion CTA */}
+      {/* Pay card */}
+      {(job as any).cleanerPay != null && (
+        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+          <div className="w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-xs text-emerald-600 font-medium">Your pay for this job</p>
+            <p className="text-xl font-bold text-emerald-700">
+              ${Number((job as any).cleanerPay).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Start / Complete CTA */}
       {nextStatus && (
         <Button
           size="lg"
@@ -133,8 +148,11 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
           onClick={handleAction}
           loading={updateJob.isPending}
         >
-          <Clock className="w-5 h-5" />
-          {job.status === "ASSIGNED" ? "Clock In & Start" : "Finish & Complete"}
+          {job.status === "ASSIGNED" ? (
+            <><Clock className="w-5 h-5" /> Start Job</>
+          ) : (
+            <><CheckCircle className="w-5 h-5" /> Mark as Complete</>
+          )}
         </Button>
       )}
 
