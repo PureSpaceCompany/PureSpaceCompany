@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
-import { resend } from "@/lib/resend";
+import { getStripe } from "@/lib/stripe";
+import { getResend } from "@/lib/resend";
 import { InvoiceEmail } from "@/components/emails/invoice-email";
 import * as React from "react";
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
     // Create Stripe Checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await getStripe().checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       line_items: [
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Send email via Resend
     const fromEmail = process.env.RESEND_FROM_EMAIL ?? "invoices@resend.dev";
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: `${companyName} <${fromEmail}>`,
       to: recipientEmail,
       subject: `Invoice ${invoice.invoiceNumber} — ${amount} due ${dueDate}`,
