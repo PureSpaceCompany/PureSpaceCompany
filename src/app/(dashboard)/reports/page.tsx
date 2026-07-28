@@ -156,14 +156,12 @@ export default async function ReportsPage({
   const billedDelta   = prevBilledAmt > 0 ? ((totalBilled - prevBilledAmt) / prevBilledAmt) * 100 : null;
   const jobsDelta     = jobsPrevMonth > 0 ? ((totalJobs - jobsPrevMonth) / jobsPrevMonth) * 100 : null;
 
-  // Daily chart — per day: scheduled count, completed count, revenue
-  // Build date-keyed map so custom ranges spanning multiple months work correctly
-  interface DayData { scheduled: number; completed: number; revenue: number; date: Date }
+  // Daily chart — per day: scheduled count, completed count, earned revenue, projected revenue
+  interface DayData { scheduled: number; completed: number; revenue: number; projected: number; date: Date }
   const dayMap = new Map<string, DayData>();
-  // seed every date in the range so empty days still show
   for (let d = new Date(chartStart); d <= chartEnd; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
     const key = d.toISOString().slice(0, 10);
-    dayMap.set(key, { scheduled: 0, completed: 0, revenue: 0, date: new Date(d) });
+    dayMap.set(key, { scheduled: 0, completed: 0, revenue: 0, projected: 0, date: new Date(d) });
   }
   for (const job of chartJobs) {
     const key = new Date(job.scheduledStart).toISOString().slice(0, 10);
@@ -173,9 +171,15 @@ export default async function ReportsPage({
     if (job.status === "COMPLETED") {
       entry.completed++;
       entry.revenue += Number(job.flatRate ?? 0);
+    } else if (job.status !== "CANCELLED" && job.status !== "NO_SHOW") {
+      // ASSIGNED / UNASSIGNED / IN_PROGRESS — count toward projected income
+      entry.projected += Number(job.flatRate ?? 0);
     }
   }
   const dailyData = Array.from(dayMap.values());
+  // Use revenue for bar height; fall back to job count if no flatRates are set
+  const hasAnyRevenue = dailyData.some((d) => d.revenue + d.projected > 0);
+  const maxRevenue = Math.max(...dailyData.map((d) => d.revenue + d.projected), 1);
   const maxScheduled = Math.max(...dailyData.map((d) => d.scheduled), 1);
 
   const chartLabel = useCustomRange
@@ -315,13 +319,13 @@ export default async function ReportsPage({
               <div>
                 <h2 className="font-semibold text-gray-900">Daily Activity — {chartLabel}</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · scheduled vs completed · revenue per day
+                  {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · {hasAnyRevenue ? "income per day" : "jobs per day (set flat rates to see income)"}
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-200 inline-block" /> Scheduled</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Completed</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Earned</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-300 inline-block" /> Projected</span>
                 </div>
                 <Suspense>
                   <DailyRangePicker
@@ -341,12 +345,25 @@ export default async function ReportsPage({
               <>
                 <div className="flex items-end gap-px h-44 mt-4">
                   {dailyData.map((day, i) => {
-                    const scheduledPct = Math.round((day.scheduled / maxScheduled) * 100);
-                    const completedPct = day.scheduled > 0 ? Math.round((day.completed / day.scheduled) * 100) : 0;
+                    const totalIncome = day.revenue + day.projected;
                     const hasActivity = day.scheduled > 0;
                     const todayStr = new Date().toISOString().slice(0, 10);
                     const isToday = day.date.toISOString().slice(0, 10) === todayStr;
                     const dayLabel = day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+                    // Bar height proportional to income when available, else job count
+                    const barPct = hasAnyRevenue
+                      ? totalIncome > 0 ? Math.max(Math.round((totalIncome / maxRevenue) * 100), 4) : (hasActivity ? 2 : 0)
+                      : hasActivity ? Math.max(Math.round((day.scheduled / maxScheduled) * 100), 4) : 0;
+
+                    // Within the bar: earned (green) at bottom, projected (blue) on top
+                    const earnedFrac = totalIncome > 0 ? day.revenue / totalIncome : 0;
+                    const projFrac   = totalIncome > 0 ? day.projected / totalIncome : 0;
+                    // If no flatRates, show green/blue split by completed vs scheduled count
+                    const earnedFracFallback = day.scheduled > 0 ? day.completed / day.scheduled : 0;
+
+                    const earnedPct  = hasAnyRevenue ? Math.round(earnedFrac * 100)  : Math.round(earnedFracFallback * 100);
+                    const projPct    = hasAnyRevenue ? Math.round(projFrac * 100)    : Math.round((1 - earnedFracFallback) * 100);
 
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative group">
@@ -354,24 +371,33 @@ export default async function ReportsPage({
                         {hasActivity && (
                           <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
                             <p className="font-semibold mb-0.5">{dayLabel}</p>
-                            <p className="text-gray-300">{day.completed}/{day.scheduled} completed ({completedPct}%)</p>
-                            {day.revenue > 0 && <p className="text-emerald-400">{formatCurrency(day.revenue)}</p>}
+                            <p className="text-gray-300">{day.completed}/{day.scheduled} job{day.scheduled !== 1 ? "s" : ""} completed</p>
+                            {day.revenue > 0 && <p className="text-emerald-400">Earned: {formatCurrency(day.revenue)}</p>}
+                            {day.projected > 0 && <p className="text-blue-300">Projected: {formatCurrency(day.projected)}</p>}
+                            {totalIncome > 0 && <p className="text-white font-semibold border-t border-gray-700 mt-1 pt-1">Total: {formatCurrency(totalIncome)}</p>}
                           </div>
                         )}
 
-                        {/* Stacked bar */}
-                        <div
-                          className="w-full relative rounded-t overflow-hidden"
-                          style={{ height: hasActivity ? `${Math.max(scheduledPct, 8)}%` : "2%" }}
-                        >
-                          <div className="absolute inset-0 bg-blue-100 rounded-t" />
-                          {day.completed > 0 && (
-                            <div
-                              className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t"
-                              style={{ height: `${completedPct}%` }}
-                            />
-                          )}
-                        </div>
+                        {/* Stacked bar: earned (green bottom) + projected (blue top) */}
+                        {barPct > 0 && (
+                          <div
+                            className="w-full relative rounded-t overflow-hidden"
+                            style={{ height: `${barPct}%` }}
+                          >
+                            {/* Projected (blue) — fills the full bar as background */}
+                            <div className={`absolute inset-0 rounded-t ${projPct > 0 || !hasAnyRevenue ? "bg-blue-200" : "bg-gray-100"}`} />
+                            {/* Earned (green) — sits at the bottom */}
+                            {earnedPct > 0 && (
+                              <div
+                                className="absolute bottom-0 left-0 right-0 bg-emerald-500"
+                                style={{ height: `${earnedPct}%` }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {barPct === 0 && hasActivity && (
+                          <div className="w-full rounded-t bg-gray-100" style={{ height: "2%" }} />
+                        )}
 
                         {/* Today dot */}
                         {isToday && (
