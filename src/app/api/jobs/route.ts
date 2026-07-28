@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     const jobs = await prisma.job.findMany({
       where,
-      orderBy: { scheduledStart: "asc" },
+      orderBy: { scheduledStart: "desc" },
       include: {
         client: true,
         property: true,
