@@ -7,9 +7,10 @@ import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Calendar, Briefcase, Users, UserCog,
-  FileText, Settings, LogOut, SprayCan, BarChart2, MapPin, Menu, X, Inbox,
+  FileText, Settings, LogOut, BarChart2, MapPin, Menu, X, Inbox,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { Logo } from "@/components/ui/logo";
 
 const adminNav = [
   { href: "/admin",      label: "Dashboard", icon: LayoutDashboard },
@@ -68,11 +69,8 @@ export function Sidebar() {
     <>
       {/* ── Desktop sidebar (hidden on mobile) ── */}
       <aside className="hidden md:flex flex-col w-64 bg-gray-900 text-gray-100 min-h-screen shrink-0">
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-gray-700">
-          <div className="p-1.5 bg-blue-600 rounded-lg">
-            <SprayCan className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-lg tracking-tight">CleanPro</span>
+        <div className="flex items-center px-5 py-5 border-b border-gray-700">
+          <Logo size="md" variant="light" />
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -92,12 +90,7 @@ export function Sidebar() {
 
       {/* ── Mobile top bar ── */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900 text-white shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className="p-1 bg-blue-600 rounded-lg">
-            <SprayCan className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-base tracking-tight">CleanPro</span>
-        </div>
+        <Logo size="sm" variant="light" />
         <button
           onClick={() => setMobileOpen(true)}
           className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
@@ -120,12 +113,7 @@ export function Sidebar() {
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-600 rounded-lg">
-              <SprayCan className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-base tracking-tight">CleanPro</span>
-          </div>
+          <Logo size="sm" variant="light" />
           <button
             onClick={() => setMobileOpen(false)}
             className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"

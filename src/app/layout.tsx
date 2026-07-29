@@ -7,9 +7,9 @@ import { SessionProvider } from "@/providers/session-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CleanPro – Cleaning Management",
+  title: "StayShine – Cleaning Management",
   description: "Professional cleaning service management platform",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "CleanPro" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "StayShine" },
 };
 
 export const viewport: Viewport = {

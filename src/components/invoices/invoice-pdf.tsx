@@ -52,7 +52,7 @@ interface InvoicePDFProps {
   companyPhone?: string;
 }
 
-export function InvoicePDFButton({ invoice, companyName = "CleanPro Services", companyAddress = "", companyPhone = "" }: InvoicePDFProps) {
+export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAddress = "", companyPhone = "" }: InvoicePDFProps) {
   const download = useCallback(async () => {
     const { jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
@@ -274,7 +274,7 @@ interface StatementProps {
   companyName?: string;
 }
 
-export function ClientStatementPDFButton({ clientName, jobs, companyName = "CleanPro Services" }: StatementProps) {
+export function ClientStatementPDFButton({ clientName, jobs, companyName = "StayShine" }: StatementProps) {
   const download = useCallback(async () => {
     const { jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");

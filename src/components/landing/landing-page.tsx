@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  SprayCan, Star, Shield, Clock, Sparkles, ChevronRight,
+  Star, Shield, Clock, Sparkles, ChevronRight,
   Check, Menu, X, Phone, Mail, MapPin, ArrowRight,
   Home, Building2, Sofa,
 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 const NAV_LINKS = [
   { label: "Services", href: "#services" },
@@ -113,12 +114,7 @@ export function LandingPage() {
       {/* ── NAV ── */}
       <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 backdrop-blur shadow-sm" : "bg-transparent"}`}>
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-600 rounded-xl">
-              <SprayCan className="w-4 h-4 text-white" />
-            </div>
-            <span className={`font-bold text-lg tracking-tight ${scrolled ? "text-gray-900" : "text-white"}`}>CleanPro</span>
-          </div>
+          <Logo size="sm" variant={scrolled ? "dark" : "light"} />
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
@@ -408,7 +404,7 @@ export function LandingPage() {
               <div className="space-y-5">
                 {[
                   { icon: Phone, label: "Phone", value: "(512) 000-0000" },
-                  { icon: Mail, label: "Email", value: "hello@cleanpro.com" },
+                  { icon: Mail, label: "Email", value: "hello@stayshine.com" },
                   { icon: MapPin, label: "Service Area", value: "Austin, TX & surrounding areas" },
                 ].map((c) => (
                   <div key={c.label} className="flex items-center gap-4">
@@ -481,12 +477,7 @@ export function LandingPage() {
       <footer className="bg-gray-900 text-gray-400 py-12 px-5">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg">
-                <SprayCan className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-white text-lg">CleanPro</span>
-            </div>
+            <Logo size="sm" variant="light" />
             <nav className="flex flex-wrap justify-center gap-6 text-sm">
               {NAV_LINKS.map((l) => (
                 <button key={l.href} onClick={() => scrollTo(l.href)}
@@ -496,7 +487,7 @@ export function LandingPage() {
             </nav>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>© {new Date().getFullYear()} CleanPro Services. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} StayShine. All rights reserved.</p>
           </div>
         </div>
       </footer>

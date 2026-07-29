@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const appSettings = await prisma.appSettings.findUnique({ where: { id: "default" } });
-    const companyName = appSettings?.companyName ?? "CleanPro Services";
+    const companyName = appSettings?.companyName ?? "StayShine";
 
     const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 

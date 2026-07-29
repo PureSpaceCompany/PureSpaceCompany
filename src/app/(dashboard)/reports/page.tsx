@@ -12,7 +12,7 @@ import { Suspense } from "react";
 import MonthNav from "./month-nav";
 import DailyRangePicker from "./daily-range-picker";
 
-export const metadata = { title: "Reports – CleanPro" };
+export const metadata = { title: "Reports – StayShine" };
 export const dynamic = "force-dynamic";
 
 function parseMonth(raw: string | undefined): { year: number; month: number } {

@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { JobStatus } from "@/types";
 
-export const metadata = { title: "Dashboard – CleanPro" };
+export const metadata = { title: "Dashboard – StayShine" };
 export const dynamic = "force-dynamic";
 
 function formatTime(d: Date) {

@@ -3,7 +3,7 @@
 import { signIn, getSession } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SprayCan } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -41,11 +41,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="p-3 bg-blue-600 rounded-2xl shadow-lg">
-            <SprayCan className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">CleanPro</h1>
+        <div className="flex flex-col items-center gap-3">
+          <Logo size="lg" variant="dark" />
           <p className="text-sm text-gray-500">Sign in to your account</p>
         </div>
 
