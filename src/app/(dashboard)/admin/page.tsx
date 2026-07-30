@@ -29,7 +29,7 @@ const STATUS_DOT: Record<JobStatus, string> = {
   IN_PROGRESS:"bg-amber-400",
   COMPLETED:  "bg-emerald-500",
   CANCELLED:  "bg-red-400",
-  NO_SHOW:    "bg-orange-400",
+  NO_SHOW:    "bg-[#C8A46A]",
 };
 
 export default async function AdminDashboard() {
@@ -116,7 +116,7 @@ export default async function AdminDashboard() {
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </p>
           </div>
-          <Link href="/jobs?new=1" className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition-colors">
+          <Link href="/jobs?new=1" className="flex items-center gap-1.5 text-sm font-medium text-[#163A70] hover:text-[#163A70] bg-[#FAF8F3] hover:bg-[#FAF8F3] px-4 py-2 rounded-lg transition-colors">
             New Job <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -145,8 +145,8 @@ export default async function AdminDashboard() {
               value: clientCount,
               sub: `${completedCount} jobs completed`,
               icon: Briefcase,
-              iconBg: "bg-orange-500",
-              border: "border-t-4 border-t-orange-500",
+              iconBg: "bg-[#163A70]",
+              border: "border-t-4 border-t-[#C8A46A]",
             },
             {
               label: "Pending Invoices",
@@ -273,9 +273,9 @@ export default async function AdminDashboard() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <h2 className="font-semibold text-gray-900">Upcoming Jobs</h2>
-                <span className="text-xs font-medium bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{upcomingJobs.length}</span>
+                <span className="text-xs font-medium bg-[#FAF8F3] text-[#163A70] px-2 py-0.5 rounded-full">{upcomingJobs.length}</span>
               </div>
-              <Link href="/schedule" className="text-xs text-orange-600 hover:underline flex items-center gap-1">
+              <Link href="/schedule" className="text-xs text-[#163A70] hover:underline flex items-center gap-1">
                 Schedule <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -297,7 +297,7 @@ export default async function AdminDashboard() {
                       className="flex items-start gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors"
                     >
                       {/* Date column */}
-                      <div className={`shrink-0 w-12 text-center rounded-lg py-1.5 ${today ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+                      <div className={`shrink-0 w-12 text-center rounded-lg py-1.5 ${today ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600"}`}>
                         <p className="text-xs font-medium">{today ? "TODAY" : start.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}</p>
                         <p className="text-lg font-bold leading-tight">{start.getDate()}</p>
                       </div>

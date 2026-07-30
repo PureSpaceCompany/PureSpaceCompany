@@ -34,6 +34,11 @@ const clientNav = [
   { href: "/client/invoices", label: "Invoices",  icon: FileText },
 ];
 
+// navy sidebar bg
+const NAVY = "#163A70";
+const NAVY_DARK = "#0f2a54";
+const GOLD = "#C8A46A";
+
 export function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
@@ -45,7 +50,6 @@ export function Sidebar() {
     role === "CLIENT"  ? clientNav  :
     adminNav;
 
-  // Bottom nav shows first 5 items on mobile
   const bottomNav = nav.slice(0, 5);
 
   const NavLink = ({ href, label, icon: Icon, onClick }: { href: string; label: string; icon: any; onClick?: () => void }) => {
@@ -54,9 +58,10 @@ export function Sidebar() {
       <Link
         href={href}
         onClick={onClick}
+        style={active ? { backgroundColor: GOLD, color: "#fff" } : {}}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          active ? "bg-orange-500 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          active ? "" : "text-blue-200 hover:bg-white/10 hover:text-white"
         )}
       >
         <Icon className="w-4 h-4 shrink-0" />
@@ -65,11 +70,14 @@ export function Sidebar() {
     );
   };
 
+  const sidebarStyle = { backgroundColor: NAVY };
+  const borderStyle = { borderColor: "rgba(200,164,106,0.2)" };
+
   return (
     <>
-      {/* ── Desktop sidebar (hidden on mobile) ── */}
-      <aside className="hidden md:flex flex-col w-64 bg-gray-900 text-gray-100 min-h-screen shrink-0">
-        <div className="flex items-center px-5 py-5 border-b border-gray-700">
+      {/* ── Desktop sidebar ── */}
+      <aside className="hidden md:flex flex-col w-64 min-h-screen shrink-0" style={sidebarStyle}>
+        <div className="flex items-center px-5 py-5 border-b" style={borderStyle}>
           <Logo size="md" variant="light" />
         </div>
 
@@ -77,11 +85,13 @@ export function Sidebar() {
           {nav.map((item) => <NavLink key={item.href} {...item} />)}
         </nav>
 
-        <div className="px-3 py-4 border-t border-gray-700">
-          <div className="px-3 py-2 text-xs text-gray-500 truncate">{session?.user?.email}</div>
+        <div className="px-3 py-4 border-t" style={borderStyle}>
+          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(200,164,106,0.6)" }}>
+            {session?.user?.email}
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-200 hover:bg-white/10 hover:text-white"
           >
             <LogOut className="w-4 h-4" /> Sign out
           </button>
@@ -89,11 +99,11 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile top bar ── */}
-      <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 bg-gray-900 text-white shadow-lg">
+      <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 h-14 shadow-lg" style={sidebarStyle}>
         <Logo size="sm" variant="light" />
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -101,23 +111,17 @@ export function Sidebar() {
 
       {/* ── Mobile drawer overlay ── */}
       {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* ── Mobile drawer ── */}
       <aside className={cn(
-        "md:hidden fixed top-0 left-0 z-50 h-full w-72 bg-gray-900 text-gray-100 flex flex-col transition-transform duration-300 ease-in-out",
+        "md:hidden fixed top-0 left-0 z-50 h-full w-72 flex flex-col transition-transform duration-300 ease-in-out",
         mobileOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+      )} style={sidebarStyle}>
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={borderStyle}>
           <Logo size="sm" variant="light" />
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-          >
+          <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -128,39 +132,39 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="px-3 py-4 border-t border-gray-700">
-          <div className="px-3 py-2 text-xs text-gray-500 truncate">{session?.user?.email}</div>
+        <div className="px-3 py-4 border-t" style={borderStyle}>
+          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(200,164,106,0.6)" }}>
+            {session?.user?.email}
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-200 hover:bg-white/10 hover:text-white"
           >
             <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
       </aside>
 
-      {/* ── Mobile bottom nav (quick access to top 5 items) ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-gray-900 border-t border-gray-700 flex items-center justify-around px-2 h-16 safe-area-bottom">
+      {/* ── Mobile bottom nav ── */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t flex items-center justify-around px-2 h-16 safe-area-bottom" style={{ ...sidebarStyle, ...borderStyle }}>
         {bottomNav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0",
-                active ? "text-orange-400" : "text-gray-500 hover:text-gray-300"
-              )}
+              className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0"
+              style={{ color: active ? GOLD : "rgba(147,197,253,0.7)" }}
             >
               <Icon className="w-5 h-5 shrink-0" />
               <span className="text-[10px] font-medium truncate">{label}</span>
             </Link>
           );
         })}
-        {/* "More" button opens the drawer */}
         <button
           onClick={() => setMobileOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-gray-500 hover:text-gray-300 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors"
+          style={{ color: "rgba(147,197,253,0.7)" }}
         >
           <Menu className="w-5 h-5 shrink-0" />
           <span className="text-[10px] font-medium">More</span>

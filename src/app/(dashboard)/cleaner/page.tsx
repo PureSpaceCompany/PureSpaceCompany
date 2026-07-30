@@ -29,7 +29,7 @@ const STATUS_STYLES: Record<JobStatus, string> = {
   IN_PROGRESS: "bg-amber-100 text-amber-700",
   COMPLETED: "bg-emerald-100 text-emerald-700",
   CANCELLED: "bg-red-100 text-red-600",
-  NO_SHOW: "bg-orange-100 text-orange-700",
+  NO_SHOW: "bg-[#FAF8F3] text-[#163A70]",
 };
 
 type Tab = "today" | "week" | "month" | "completed";

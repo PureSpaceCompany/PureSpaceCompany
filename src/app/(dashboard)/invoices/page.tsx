@@ -49,7 +49,7 @@ function InvoicePreviewModal({ invoice, job, onClose, onSend }: { invoice: any; 
         {/* Branded header */}
         <div className="flex items-start justify-between gap-4 pt-1 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center">
               <LogoMark size={22} className="brightness-0 invert" />
             </div>
             <div>
@@ -200,9 +200,9 @@ function QuickGenerateModal({ job, onClose }: { job: any; onClose: () => void })
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
         )}
-        <div className="bg-orange-50 rounded-lg p-3 text-sm text-orange-800 space-y-1">
+        <div className="bg-[#FAF8F3] rounded-lg p-3 text-sm text-[#163A70] space-y-1">
           <p className="font-semibold">{job.title}</p>
-          <p className="text-orange-600">{clientDisplayName(job.client)}</p>
+          <p className="text-[#163A70]">{clientDisplayName(job.client)}</p>
           {job.property && <p>Property: {job.property.name}</p>}
           <p>Service date: {new Date(job.scheduledStart).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
         </div>
@@ -265,7 +265,7 @@ function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => v
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500 mb-1 font-medium">Payment link (for reference):</p>
               <a href={result.paymentUrl} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-orange-600 underline break-all">{result.paymentUrl}</a>
+                className="text-xs text-[#163A70] underline break-all">{result.paymentUrl}</a>
             </div>
             <div className="flex justify-end">
               <Button size="sm" onClick={onClose}>Done</Button>
@@ -273,9 +273,9 @@ function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => v
           </div>
         ) : (
           <>
-            <div className="bg-orange-50 rounded-lg p-3 text-sm text-orange-800 space-y-0.5">
+            <div className="bg-[#FAF8F3] rounded-lg p-3 text-sm text-[#163A70] space-y-0.5">
               <p className="font-semibold">{invoice.invoiceNumber} — {formatCurrency(Number(invoice.total))}</p>
-              <p className="text-orange-600">{invoice.job?.title}</p>
+              <p className="text-[#163A70]">{invoice.job?.title}</p>
             </div>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
@@ -362,7 +362,7 @@ function BulkSendModal({ invoices, onClose }: { invoices: any[]; onClose: () => 
                   <span className="text-gray-700 font-semibold">{formatCurrency(Number(inv.total))}</span>
                   {!st && <span className="text-xs text-gray-400">{inv.status}</span>}
                   {st === "pending" && <span className="text-xs text-gray-400">Queued</span>}
-                  {st === "sending" && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
+                  {st === "sending" && <Loader2 className="w-4 h-4 animate-spin text-[#163A70]" />}
                   {st === "done" && <CheckCircle className="w-4 h-4 text-emerald-500" />}
                   {st === "error" && (
                     <span className="text-xs text-red-500" title={errors[inv.id]}>Failed</span>
@@ -562,7 +562,7 @@ export default function InvoicesPage() {
             key={f.value}
             onClick={() => setStatusFilter(f.value as any)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              statusFilter === f.value ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              statusFilter === f.value ? "bg-[#FAF8F3]0 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {f.label}
@@ -573,7 +573,7 @@ export default function InvoicesPage() {
       {/* Client groups */}
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#163A70]" />
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
@@ -617,7 +617,7 @@ export default function InvoicesPage() {
                   onClick={() => toggleClient(cid)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center text-white text-sm font-bold shrink-0">
                       {name[0]?.toUpperCase() ?? "?"}
                     </div>
                     <div>
@@ -708,7 +708,7 @@ export default function InvoicesPage() {
                                 <div className="flex items-center gap-1 justify-end">
                                   {needsAction && (
                                     <Button size="sm" variant="ghost" onClick={() => setGenerateJob(job)}
-                                      className="text-orange-600 hover:bg-orange-50 h-7 px-2 text-xs font-medium">
+                                      className="text-[#163A70] hover:bg-[#FAF8F3] h-7 px-2 text-xs font-medium">
                                       <FilePlus className="w-3.5 h-3.5 mr-1" />
                                       {isDraft ? "Finalize" : "Invoice"}
                                     </Button>
@@ -725,7 +725,7 @@ export default function InvoicesPage() {
                                       {(isPending || isOverdue || isDraft) && (
                                         <Button size="sm" variant="ghost"
                                           onClick={() => setSendTarget(invWithEmail)}
-                                          className="text-orange-600 hover:bg-orange-50 h-7 px-2 text-xs font-medium"
+                                          className="text-[#163A70] hover:bg-[#FAF8F3] h-7 px-2 text-xs font-medium"
                                           title="Send invoice by email">
                                           <Send className="w-3.5 h-3.5 mr-1" /> Send
                                         </Button>

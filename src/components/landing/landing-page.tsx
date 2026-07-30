@@ -125,7 +125,7 @@ export function LandingPage() {
               </button>
             ))}
             <Link href="/login"
-              className="ml-2 px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 transition-colors">
+              className="ml-2 px-4 py-2 bg-[#163A70] text-white text-sm font-semibold rounded-xl hover:bg-[#0f2a54] transition-colors">
               Staff Login
             </Link>
           </nav>
@@ -147,7 +147,7 @@ export function LandingPage() {
               </button>
             ))}
             <Link href="/login" onClick={() => setMenuOpen(false)}
-              className="block text-center mt-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 transition-colors">
+              className="block text-center mt-2 px-4 py-2.5 bg-[#163A70] text-white text-sm font-semibold rounded-xl hover:bg-[#0f2a54] transition-colors">
               Staff Login
             </Link>
           </div>
@@ -157,21 +157,21 @@ export function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-orange-950 to-gray-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#0a1e3d] to-gray-900" />
         {/* Decorative blobs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#163A70]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose-400/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#163A70]/5 rounded-full blur-3xl" />
 
         <div className="relative z-10 text-center px-5 max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-400/30 rounded-full text-orange-300 text-sm font-medium mb-8 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#163A70]/20 border border-[#C8A46A]/30 rounded-full text-[#C8A46A] text-sm font-medium mb-8 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5" />
             Professional Cleaning Services
           </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight mb-6">
             A Cleaner Space,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#163A70] to-[#C8A46A]">
               A Better Life
             </span>
           </h1>
@@ -182,7 +182,7 @@ export function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => scrollTo("#contact")}
-              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5">
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-[#163A70] hover:bg-[#0f2a54] text-white font-semibold rounded-2xl transition-all shadow-lg shadow-[#163A70/20] hover:shadow-[#163A70/40] hover:-translate-y-0.5">
               Get a Free Quote <ArrowRight className="w-4 h-4" />
             </button>
             <button onClick={() => scrollTo("#services")}
@@ -213,7 +213,7 @@ export function LandingPage() {
       <section id="services" className="py-24 px-5 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold uppercase tracking-wide mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F3] text-[#163A70] rounded-full text-xs font-semibold uppercase tracking-wide mb-4">
               What We Offer
             </div>
             <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Our Services</h2>
@@ -224,7 +224,7 @@ export function LandingPage() {
             {SERVICES.map((s) => (
               <div key={s.title}
                 className="group bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-[#163A70] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <s.icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{s.title}</h3>
@@ -232,7 +232,7 @@ export function LandingPage() {
                 <ul className="space-y-2">
                   {s.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
-                      <Check className="w-4 h-4 text-orange-500 shrink-0" /> {f}
+                      <Check className="w-4 h-4 text-[#163A70] shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -247,11 +247,11 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold uppercase tracking-wide mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F3] text-[#163A70] rounded-full text-xs font-semibold uppercase tracking-wide mb-6">
                 Why Choose Us
               </div>
               <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
-                We Clean Like It's <span className="text-orange-500">Our Own Home</span>
+                We Clean Like It's <span className="text-[#163A70]">Our Own Home</span>
               </h2>
               <p className="text-gray-500 mb-8 leading-relaxed">
                 Every member of our team is background-checked, trained, and passionate about delivering results. We use eco-friendly products that are safe for your family and pets.
@@ -264,8 +264,8 @@ export function LandingPage() {
                   { icon: Sparkles, title: "Eco-Friendly Products", desc: "Safe for kids, pets, and the planet." },
                 ].map((item) => (
                   <div key={item.title} className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
-                      <item.icon className="w-5 h-5 text-orange-500" />
+                    <div className="w-10 h-10 bg-[#FAF8F3] rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                      <item.icon className="w-5 h-5 text-[#163A70]" />
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900">{item.title}</div>
@@ -280,9 +280,9 @@ export function LandingPage() {
             <div className="relative h-80 md:h-auto">
               <div className="relative mx-auto w-full max-w-sm">
                 {/* Background card */}
-                <div className="absolute inset-0 bg-orange-500 rounded-3xl rotate-3 opacity-20" />
+                <div className="absolute inset-0 bg-[#163A70] rounded-3xl rotate-3 opacity-20" />
                 {/* Main card */}
-                <div className="relative bg-gradient-to-br from-orange-500 to-rose-400 rounded-3xl p-8 text-white shadow-2xl shadow-orange-200">
+                <div className="relative bg-gradient-to-br from-[#163A70] to-[#C8A46A] rounded-3xl p-8 text-white shadow-2xl shadow-[#C8A46A/20]">
                   <div className="text-5xl font-black mb-2">4.9</div>
                   <div className="flex gap-1 mb-4">
                     {[1,2,3,4,5].map((i) => <Star key={i} className="w-5 h-5 fill-white text-white" />)}
@@ -310,7 +310,7 @@ export function LandingPage() {
       <section id="pricing" className="py-24 px-5 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold uppercase tracking-wide mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F3] text-[#163A70] rounded-full text-xs font-semibold uppercase tracking-wide mb-4">
               Transparent Pricing
             </div>
             <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Simple, Clear Rates</h2>
@@ -322,7 +322,7 @@ export function LandingPage() {
               <div key={p.name}
                 className={`rounded-3xl p-8 border transition-all duration-300 ${
                   p.highlight
-                    ? "bg-orange-500 border-orange-500 shadow-2xl shadow-orange-200 scale-105 text-white"
+                    ? "bg-[#163A70] border-[#163A70] shadow-2xl shadow-[#C8A46A/20] scale-105 text-white"
                     : "bg-white border-gray-100 shadow-sm hover:shadow-lg"
                 }`}>
                 {p.highlight && (
@@ -331,23 +331,23 @@ export function LandingPage() {
                   </div>
                 )}
                 <h3 className={`text-xl font-bold mb-1 ${p.highlight ? "text-white" : "text-gray-900"}`}>{p.name}</h3>
-                <p className={`text-sm mb-5 ${p.highlight ? "text-orange-100" : "text-gray-500"}`}>{p.desc}</p>
+                <p className={`text-sm mb-5 ${p.highlight ? "text-[#FAF8F3]" : "text-gray-500"}`}>{p.desc}</p>
                 <div className="mb-6">
                   <span className={`text-4xl font-extrabold ${p.highlight ? "text-white" : "text-gray-900"}`}>{p.price}</span>
-                  <span className={`text-sm ml-1 ${p.highlight ? "text-orange-200" : "text-gray-400"}`}>/ {p.period}</span>
+                  <span className={`text-sm ml-1 ${p.highlight ? "text-[#C8A46A]" : "text-gray-400"}`}>/ {p.period}</span>
                 </div>
                 <ul className="space-y-2.5 mb-8">
                   {p.features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2 text-sm ${p.highlight ? "text-orange-100" : "text-gray-600"}`}>
-                      <Check className={`w-4 h-4 shrink-0 ${p.highlight ? "text-white" : "text-orange-500"}`} /> {f}
+                    <li key={f} className={`flex items-center gap-2 text-sm ${p.highlight ? "text-[#FAF8F3]" : "text-gray-600"}`}>
+                      <Check className={`w-4 h-4 shrink-0 ${p.highlight ? "text-white" : "text-[#163A70]"}`} /> {f}
                     </li>
                   ))}
                 </ul>
                 <button onClick={() => scrollTo("#contact")}
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
                     p.highlight
-                      ? "bg-white text-orange-600 hover:bg-orange-50"
-                      : "bg-orange-500 text-white hover:bg-orange-600"
+                      ? "bg-white text-[#163A70] hover:bg-[#FAF8F3]"
+                      : "bg-[#163A70] text-white hover:bg-[#0f2a54]"
                   }`}>
                   {p.cta}
                 </button>
@@ -375,7 +375,7 @@ export function LandingPage() {
                 </div>
                 <p className="text-gray-700 leading-relaxed mb-5 italic">"{r.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-rose-400 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center text-white font-bold text-sm">
                     {r.name[0]}
                   </div>
                   <span className="font-semibold text-gray-900 text-sm">{r.name}</span>
@@ -391,11 +391,11 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-start">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold uppercase tracking-wide mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F3] text-[#163A70] rounded-full text-xs font-semibold uppercase tracking-wide mb-6">
                 Get in Touch
               </div>
               <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-5 leading-tight">
-                Ready for a <span className="text-orange-500">Spotless Space?</span>
+                Ready for a <span className="text-[#163A70]">Spotless Space?</span>
               </h2>
               <p className="text-gray-500 mb-10 leading-relaxed">
                 Fill out the form and we'll get back to you within 24 hours with a free, no-obligation quote.
@@ -408,8 +408,8 @@ export function LandingPage() {
                   { icon: MapPin, label: "Service Area", value: "Austin, TX & surrounding areas" },
                 ].map((c) => (
                   <div key={c.label} className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-                      <c.icon className="w-5 h-5 text-orange-500" />
+                    <div className="w-10 h-10 bg-[#FAF8F3] rounded-xl flex items-center justify-center shrink-0">
+                      <c.icon className="w-5 h-5 text-[#163A70]" />
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 font-medium">{c.label}</div>
@@ -429,7 +429,7 @@ export function LandingPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Message Sent!</h3>
                   <p className="text-gray-500 text-sm">Thank you for reaching out. We'll be in touch within 24 hours.</p>
-                  <button onClick={() => setSubmitted(false)} className="mt-6 text-orange-500 text-sm font-medium hover:underline">
+                  <button onClick={() => setSubmitted(false)} className="mt-6 text-[#163A70] text-sm font-medium hover:underline">
                     Send another message
                   </button>
                 </div>
@@ -440,29 +440,29 @@ export function LandingPage() {
                       <label className="text-sm font-medium text-gray-700">Full Name</label>
                       <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="Jane Smith"
-                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition" />
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#163A70/20] focus:border-[#C8A46A] transition" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-gray-700">Phone</label>
                       <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                         placeholder="(512) 000-0000"
-                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition" />
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#163A70/20] focus:border-[#C8A46A] transition" />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-700">Email</label>
                     <input required type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                       placeholder="you@example.com"
-                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition" />
+                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#163A70/20] focus:border-[#C8A46A] transition" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-700">Message</label>
                     <textarea required rows={4} value={form.message} onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                       placeholder="Tell us about your space and what you need..."
-                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 resize-none transition" />
+                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#163A70/20] focus:border-[#C8A46A] resize-none transition" />
                   </div>
                   <button type="submit"
-                    className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    className="w-full py-3 bg-[#163A70] hover:bg-[#0f2a54] text-white font-semibold rounded-xl transition-all shadow-lg shadow-[#163A70/20] hover:shadow-[#163A70/30] hover:-translate-y-0.5 flex items-center justify-center gap-2">
                     Send Message <ArrowRight className="w-4 h-4" />
                   </button>
                   <p className="text-xs text-gray-400 text-center">We'll respond within 24 hours. No spam, ever.</p>
