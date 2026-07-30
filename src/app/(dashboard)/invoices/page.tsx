@@ -511,7 +511,7 @@ export default function InvoicesPage() {
   const isLoading = jobsLoading || invoicesLoading;
 
   return (
-    <div className="p-6 space-y-5 max-w-[1200px]">
+    <div className="p-4 md:p-6 space-y-5 max-w-[1200px]">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -535,7 +535,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* KPI bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-4 border-t-4 border-t-gray-400">
           <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Billed</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalBilled)}</p>
@@ -562,7 +562,7 @@ export default function InvoicesPage() {
             key={f.value}
             onClick={() => setStatusFilter(f.value as any)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              statusFilter === f.value ? "bg-[#FAF8F3]0 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              statusFilter === f.value ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {f.label}
@@ -631,7 +631,7 @@ export default function InvoicesPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2 sm:gap-6">
                     <div className="text-right hidden sm:block">
                       <p className="text-xs text-gray-400">Billed / Owed</p>
                       <p className="text-sm font-semibold text-gray-900">
@@ -640,23 +640,26 @@ export default function InvoicesPage() {
                         {groupOwed === 0 && groupTotal > 0 && <span className="text-emerald-600"> · Paid</span>}
                       </p>
                     </div>
+                    <span className="sm:hidden text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      {groupOwed > 0 ? <span className="text-amber-600">{formatCurrency(groupOwed)} due</span> : formatCurrency(groupTotal)}
+                    </span>
                     <ClientStatementPDFButton clientName={name} jobs={statementJobs} />
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
                   </div>
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-gray-100">
+                  <div className="border-t border-gray-100 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wider">
-                          <th className="text-left px-5 py-2.5 font-medium">Service Date</th>
-                          <th className="text-left px-5 py-2.5 font-medium">Job</th>
-                          <th className="text-left px-5 py-2.5 font-medium">Property</th>
-                          <th className="text-left px-5 py-2.5 font-medium">Invoice #</th>
-                          <th className="text-right px-5 py-2.5 font-medium">Amount</th>
-                          <th className="text-left px-5 py-2.5 font-medium">Status</th>
-                          <th className="px-5 py-2.5" />
+                          <th className="hidden sm:table-cell text-left px-5 py-2.5 font-medium">Service Date</th>
+                          <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Job</th>
+                          <th className="hidden md:table-cell text-left px-5 py-2.5 font-medium">Property</th>
+                          <th className="hidden lg:table-cell text-left px-5 py-2.5 font-medium">Invoice #</th>
+                          <th className="text-right px-3 sm:px-5 py-2.5 font-medium">Amount</th>
+                          <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Status</th>
+                          <th className="px-3 sm:px-5 py-2.5" />
                         </tr>
                       </thead>
                       <tbody>
@@ -675,27 +678,27 @@ export default function InvoicesPage() {
                               key={job.id}
                               className={`border-t border-gray-50 transition-colors group ${needsAction ? "bg-amber-50/40" : "hover:bg-gray-50"}`}
                             >
-                              <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
+                              <td className="hidden sm:table-cell px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
                                 {new Date(job.scheduledStart).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                               </td>
-                              <td className="px-5 py-3">
+                              <td className="px-3 sm:px-5 py-3">
                                 <p className="font-medium text-gray-900">{job.title}</p>
                                 <p className="text-xs text-gray-400">{job.serviceType?.replace(/_/g, " ")}</p>
                               </td>
-                              <td className="px-5 py-3 text-gray-600 text-xs">
+                              <td className="hidden md:table-cell px-5 py-3 text-gray-600 text-xs">
                                 {job.property
                                   ? <span className="font-medium">{job.property.name}<br /><span className="text-gray-400">{job.property.city}</span></span>
                                   : <span className="text-gray-400">—</span>}
                               </td>
-                              <td className="px-5 py-3 font-mono text-xs text-gray-500">
+                              <td className="hidden lg:table-cell px-5 py-3 font-mono text-xs text-gray-500">
                                 {inv?.invoiceNumber ?? <span className="text-gray-300">—</span>}
                               </td>
-                              <td className="px-5 py-3 text-right font-semibold">
+                              <td className="px-3 sm:px-5 py-3 text-right font-semibold">
                                 {amount > 0
                                   ? <span className={inv?.status === "PAID" ? "text-emerald-600" : "text-gray-900"}>{formatCurrency(amount)}</span>
                                   : <span className="text-gray-300">—</span>}
                               </td>
-                              <td className="px-5 py-3">
+                              <td className="px-3 sm:px-5 py-3">
                                 {noInv ? (
                                   <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">No Invoice</span>
                                 ) : (
@@ -704,7 +707,7 @@ export default function InvoicesPage() {
                                   </span>
                                 )}
                               </td>
-                              <td className="px-5 py-3">
+                              <td className="px-3 sm:px-5 py-3">
                                 <div className="flex items-center gap-1 justify-end">
                                   {needsAction && (
                                     <Button size="sm" variant="ghost" onClick={() => setGenerateJob(job)}

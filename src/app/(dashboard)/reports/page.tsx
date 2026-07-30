@@ -225,7 +225,7 @@ export default async function ReportsPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-6 max-w-[1400px] mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
 
         {/* Header with month navigator */}
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -315,17 +315,17 @@ export default async function ReportsPage({
           {/* Daily chart */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
             {/* Chart header */}
-            <div className="flex items-start justify-between gap-4 mb-1">
+            <div className="flex items-start justify-between gap-4 mb-1 flex-wrap">
               <div>
-                <h2 className="font-semibold text-gray-900">Daily Activity — {chartLabel}</h2>
+                <h2 className="font-semibold text-gray-900 text-sm md:text-base">Daily Activity</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · {hasAnyRevenue ? "income per day" : "jobs per day (set flat rates to see income)"}
+                  {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · {chartLabel}
                 </p>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Earned</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-300 inline-block" /> Projected</span>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-500 inline-block" /> Earned</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-300 inline-block" /> Projected</span>
                 </div>
                 <Suspense>
                   <DailyRangePicker

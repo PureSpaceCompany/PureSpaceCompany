@@ -141,7 +141,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
@@ -152,7 +152,7 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      <div className="relative w-72">
+      <div className="relative w-full max-w-xs">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input value={search} onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search by name or company..."

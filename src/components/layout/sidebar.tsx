@@ -51,6 +51,8 @@ export function Sidebar() {
     adminNav;
 
   const bottomNav = nav.slice(0, 5);
+  const moreRoutes = nav.slice(5).map((n) => n.href);
+  const moreActive = moreRoutes.some((href) => pathname === href || pathname.startsWith(href + "/"));
 
   const NavLink = ({ href, label, icon: Icon, onClick }: { href: string; label: string; icon: any; onClick?: () => void }) => {
     const active = pathname === href || pathname.startsWith(href + "/");
@@ -146,7 +148,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t flex items-center justify-around px-2 h-16 safe-area-bottom" style={{ ...sidebarStyle, ...borderStyle }}>
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t flex items-center justify-around px-2 h-16" style={{ ...sidebarStyle, ...borderStyle, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {bottomNav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -164,7 +166,7 @@ export function Sidebar() {
         <button
           onClick={() => setMobileOpen(true)}
           className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors"
-          style={{ color: "rgba(147,197,253,0.7)" }}
+          style={{ color: moreActive ? GOLD : "rgba(147,197,253,0.7)" }}
         >
           <Menu className="w-5 h-5 shrink-0" />
           <span className="text-[10px] font-medium">More</span>

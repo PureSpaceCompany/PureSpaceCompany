@@ -66,7 +66,7 @@ export default function JobsPage() {
     : jobs;
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
@@ -77,16 +77,16 @@ export default function JobsPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Search jobs or clients..."
-            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
           />
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {STATUS_FILTERS.map((f) => (
             <button key={f.value} onClick={() => setStatusFilter(f.value)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -110,23 +110,23 @@ export default function JobsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="text-left px-6 py-3 font-medium">Job</th>
-                  <th className="text-left px-6 py-3 font-medium">Client / Property</th>
-                  <th className="text-left px-6 py-3 font-medium">Scheduled</th>
-                  <th className="text-left px-6 py-3 font-medium">Assignee</th>
-                  <th className="text-left px-6 py-3 font-medium">Charged</th>
-                  <th className="text-left px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3" />
+                  <th className="text-left px-3 md:px-6 py-3 font-medium">Job</th>
+                  <th className="text-left px-3 md:px-6 py-3 font-medium">Client / Property</th>
+                  <th className="hidden sm:table-cell text-left px-3 md:px-6 py-3 font-medium">Scheduled</th>
+                  <th className="hidden lg:table-cell text-left px-3 md:px-6 py-3 font-medium">Assignee</th>
+                  <th className="hidden md:table-cell text-left px-3 md:px-6 py-3 font-medium">Charged</th>
+                  <th className="text-left px-3 md:px-6 py-3 font-medium">Status</th>
+                  <th className="px-3 md:px-6 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((job: any) => (
                   <tr key={job.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors group">
-                    <td className="px-6 py-3">
+                    <td className="px-3 md:px-6 py-3">
                       <Link href={`/jobs/${job.id}`} className="font-medium text-gray-900 hover:text-blue-600">{job.title}</Link>
                       <p className="text-xs text-gray-400 mt-0.5">{job.serviceType.replace(/_/g, " ")}</p>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 md:px-6 py-3">
                       <span className="text-gray-700">{clientDisplayName(job.client)}</span>
                       {job.property && (
                         <p className="text-xs text-gray-400 mt-0.5">{job.property.name} · {job.property.city}</p>
@@ -135,8 +135,8 @@ export default function JobsPage() {
                         <p className="text-xs text-gray-400">{job.client.city}, {job.client.state}</p>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(job.scheduledStart)}</td>
-                    <td className="px-6 py-3 text-gray-600">
+                    <td className="hidden sm:table-cell px-3 md:px-6 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(job.scheduledStart)}</td>
+                    <td className="hidden lg:table-cell px-3 md:px-6 py-3 text-gray-600">
                       {job.assignments.length > 0 ? (
                         <div className="flex items-center gap-1.5">
                           <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-medium">
@@ -147,11 +147,11 @@ export default function JobsPage() {
                         </div>
                       ) : <span className="text-gray-400 italic">Unassigned</span>}
                     </td>
-                    <td className="px-6 py-3 text-gray-700">
+                    <td className="hidden md:table-cell px-3 md:px-6 py-3 text-gray-700">
                       {job.flatRate ? formatCurrency(job.flatRate) : <span className="text-gray-400">—</span>}
                     </td>
-                    <td className="px-6 py-3"><JobStatusBadge status={job.status as JobStatus} /></td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 md:px-6 py-3"><JobStatusBadge status={job.status as JobStatus} /></td>
+                    <td className="px-3 md:px-6 py-3">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!["COMPLETED", "CANCELLED"].includes((job as any).status) && (
                           <button
