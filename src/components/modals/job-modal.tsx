@@ -108,14 +108,17 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
           next.title = client?.addressLine1 ?? "";
         }
       }
-      if (key === "propertyId" && !titleTouched) {
+      if (key === "propertyId") {
         if (value) {
           const prop = properties.find((p: any) => p.id === value);
-          next.title = prop?.addressLine1 ?? f.title;
+          if (!titleTouched) next.title = prop?.addressLine1 ?? f.title;
+          if (prop?.cleaningFee != null) next.flatRate = String(prop.cleaningFee);
         } else {
-          // reverted to "no property" — fall back to client address
-          const client = clients.find((c: any) => c.id === f.clientId);
-          next.title = client?.addressLine1 ?? "";
+          if (!titleTouched) {
+            const client = clients.find((c: any) => c.id === f.clientId);
+            next.title = client?.addressLine1 ?? "";
+          }
+          next.flatRate = "";
         }
       }
       return next;
@@ -235,7 +238,8 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             <input type="datetime-local" value={form.scheduledEnd} onChange={(e) => set("scheduledEnd", e.target.value)} className={inputClass} />
           </FormField>
 
-          <FormField label="Client Charge ($)" error={errors.flatRate} description="Amount billed to the client">
+          <FormField label="Client Charge ($)" error={errors.flatRate}
+            description={form.propertyId && form.flatRate ? "Pre-filled from property default — edit to override" : "Amount billed to the client"}>
             <input type="number" min="0" step="0.01" value={form.flatRate}
               onChange={(e) => set("flatRate", e.target.value)} placeholder="e.g. 200.00" className={inputClass} />
           </FormField>

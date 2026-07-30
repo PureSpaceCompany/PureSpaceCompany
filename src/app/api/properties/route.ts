@@ -16,6 +16,7 @@ const createSchema = z.object({
   gateCode: z.string().optional().nullable(),
   petNotes: z.string().optional().nullable(),
   specialNotes: z.string().optional().nullable(),
+  cleaningFee: z.coerce.number().nonnegative().optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useJobs } from "@/lib/hooks/use-jobs";
 import { JobStatusBadge } from "@/components/jobs/job-status-badge";
@@ -21,12 +22,22 @@ const STATUS_FILTERS = [
 ];
 
 export default function JobsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editJob, setEditJob] = useState<Job | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Job | null>(null);
   const [permanent, setPermanent] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setEditJob(null);
+      setModalOpen(true);
+      router.replace("/jobs");
+    }
+  }, [searchParams, router]);
 
   const qc = useQueryClient();
   const { data: jobs = [], isLoading } = useJobs(statusFilter ? { status: statusFilter } : {});

@@ -153,6 +153,8 @@ model Property {
   petNotes          String?
   specialNotes      String?
 
+  cleaningFee     Decimal?  @db.Decimal(10, 2)
+
   lat             Float?
   lng             Float?
 

@@ -280,13 +280,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Save button repeated at bottom for long pages */}
-      <div className="flex justify-end">
-        <Button onClick={() => save.mutate()} loading={save.isPending} className="gap-1.5">
-          <Save className="w-4 h-4" /> Save Changes
-        </Button>
-      </div>
-
       {/* ── User Management ── */}
       <Card>
         <CardHeader>

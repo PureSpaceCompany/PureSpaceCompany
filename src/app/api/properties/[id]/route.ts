@@ -15,6 +15,7 @@ const updateSchema = z.object({
   gateCode: z.string().optional().nullable(),
   petNotes: z.string().optional().nullable(),
   specialNotes: z.string().optional().nullable(),
+  cleaningFee: z.coerce.number().nonnegative().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 

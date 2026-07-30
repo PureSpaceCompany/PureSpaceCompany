@@ -56,7 +56,7 @@ export function Sidebar() {
         onClick={onClick}
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          active ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          active ? "bg-orange-500 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"
         )}
       >
         <Icon className="w-4 h-4 shrink-0" />
@@ -149,7 +149,7 @@ export function Sidebar() {
               href={href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-colors min-w-0",
-                active ? "text-blue-400" : "text-gray-500 hover:text-gray-300"
+                active ? "text-orange-400" : "text-gray-500 hover:text-gray-300"
               )}
             >
               <Icon className="w-5 h-5 shrink-0" />
