@@ -79,8 +79,15 @@ export function Sidebar() {
     <>
       {/* ── Desktop sidebar ── */}
       <aside className="hidden md:flex flex-col w-64 min-h-screen shrink-0" style={sidebarStyle}>
-        <div className="flex items-center px-5 py-5 border-b" style={borderStyle}>
-          <Logo size="md" variant="light" />
+        <div className="px-5 pt-5 pb-4 border-b" style={borderStyle}>
+          <a href="https://stayshines.com" target="_blank" rel="noopener noreferrer">
+            <Logo size="md" variant="light" />
+          </a>
+          {session?.user?.name && (
+            <p className="text-xs mt-3 truncate" style={{ color: "rgba(200,164,106,0.85)" }}>
+              Welcome, {(session.user.name as string).split(" ")[0]}
+            </p>
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

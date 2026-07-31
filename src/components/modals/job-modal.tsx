@@ -9,6 +9,66 @@ import { useCreateJob, useUpdateJob } from "@/lib/hooks/use-jobs";
 import { Job } from "@/types";
 import { clientDisplayName } from "@/lib/utils";
 
+// Build time options: every hour on :00 and :30, formatted 12-hour
+const TIME_OPTIONS: { value: string; label: string }[] = [];
+for (let h = 0; h < 24; h++) {
+  for (const m of [0, 30]) {
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    const period = h < 12 ? "AM" : "PM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    TIME_OPTIONS.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${period}` });
+  }
+}
+
+function splitDatetime(dt: string): { date: string; time: string } {
+  if (!dt) return { date: "", time: "11:00" };
+  const [date, time] = dt.split("T");
+  const [h, m] = time.split(":");
+  // snap to nearest :00 or :30
+  const snapped = Number(m) < 15 ? "00" : Number(m) < 45 ? "30" : "00";
+  const hh = snapped === "00" && Number(m) >= 45
+    ? String((Number(h) + 1) % 24).padStart(2, "0")
+    : h;
+  return { date, time: `${hh}:${snapped}` };
+}
+
+function joinDatetime(date: string, time: string): string {
+  if (!date || !time) return "";
+  return `${date}T${time}`;
+}
+
+function DateTimePicker({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
+  const { date, time } = splitDatetime(value);
+  return (
+    <div className="flex gap-2">
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => onChange(joinDatetime(e.target.value, time || "11:00"))}
+        className={`${inputClass} flex-1`}
+      />
+      <select
+        value={time || "11:00"}
+        onChange={(e) => onChange(joinDatetime(date, e.target.value))}
+        className={`${selectClass} w-32`}
+      >
+        {TIME_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 interface JobModalProps {
   open: boolean;
   onClose: () => void;
@@ -90,8 +150,13 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
       });
       setTitleTouched(true); // editing an existing job — never overwrite its title
     } else {
+      // Default start: today at 11:00 AM, end at 12:00 PM
+      const today = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
       setForm({ clientId: "", propertyId: "", title: "", serviceType: "STANDARD", recurrence: "ONCE",
-        scheduledStart: "", scheduledEnd: "", flatRate: "", cleanerPay: "", notes: "", staffIds: [], checklistItems: "" });
+        scheduledStart: `${todayStr}T11:00`, scheduledEnd: `${todayStr}T12:00`,
+        flatRate: "", cleanerPay: "", notes: "", staffIds: [], checklistItems: "" });
       setTitleTouched(false);
     }
     setErrors({});
@@ -230,12 +295,12 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             </select>
           </FormField>
 
-          <FormField label="Scheduled Start" required error={errors.scheduledStart}>
-            <input type="datetime-local" value={form.scheduledStart} onChange={(e) => set("scheduledStart", e.target.value)} className={inputClass} />
+          <FormField label="Scheduled Start" required error={errors.scheduledStart} className="sm:col-span-2">
+            <DateTimePicker value={form.scheduledStart} onChange={(v) => set("scheduledStart", v)} />
           </FormField>
 
-          <FormField label="Scheduled End" required error={errors.scheduledEnd}>
-            <input type="datetime-local" value={form.scheduledEnd} onChange={(e) => set("scheduledEnd", e.target.value)} className={inputClass} />
+          <FormField label="Scheduled End" required error={errors.scheduledEnd} className="sm:col-span-2">
+            <DateTimePicker value={form.scheduledEnd} onChange={(v) => set("scheduledEnd", v)} />
           </FormField>
 
           <FormField label="Client Charge ($)" error={errors.flatRate}

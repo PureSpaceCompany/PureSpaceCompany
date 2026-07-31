@@ -1,109 +1,44 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, X } from "lucide-react";
+
+export type RangePreset = "7d" | "week" | "biweekly" | "month";
+
+const PRESETS: { key: RangePreset; label: string }[] = [
+  { key: "7d",       label: "7 days" },
+  { key: "week",     label: "Week" },
+  { key: "biweekly", label: "2 Weeks" },
+  { key: "month",    label: "Month" },
+];
 
 export default function DailyRangePicker({
-  activeFrom,
-  activeTo,
+  activePreset,
   month,
 }: {
-  activeFrom: string | null;
-  activeTo: string | null;
-  month: string; // "YYYY-MM" — kept so the rest of the page doesn't reset
+  activePreset: RangePreset;
+  month: string;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState(activeFrom ?? "");
-  const [to, setTo] = useState(activeTo ?? "");
 
-  function apply() {
-    if (!from || !to) return;
-    router.push(`/reports?month=${month}&from=${from}&to=${to}`);
-    setOpen(false);
+  function select(preset: RangePreset) {
+    router.push(`/reports?month=${month}&range=${preset}`);
   }
-
-  function reset() {
-    setFrom("");
-    setTo("");
-    router.push(`/reports?month=${month}`);
-    setOpen(false);
-  }
-
-  const hasCustom = !!activeFrom && !!activeTo;
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-2">
-        {hasCustom && (
-          <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-2 py-0.5 flex items-center gap-1">
-            {activeFrom} → {activeTo}
-            <button onClick={reset} className="hover:text-red-500 transition-colors">
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        )}
+    <div className="flex items-center gap-1">
+      {PRESETS.map(({ key, label }) => (
         <button
-          onClick={() => setOpen((v) => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors shadow-sm ${
-            hasCustom
-              ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+          key={key}
+          onClick={() => select(key)}
+          className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors ${
+            activePreset === key
+              ? "bg-[#163A70] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          <CalendarDays className="w-3.5 h-3.5" />
-          {hasCustom ? "Change range" : "Custom range"}
+          {label}
         </button>
-      </div>
-
-      {open && (
-        <>
-          {/* backdrop */}
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-20 bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-72">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Select date range</p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">From</label>
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">To</label>
-                <input
-                  type="date"
-                  value={to}
-                  min={from}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              {hasCustom && (
-                <button
-                  onClick={reset}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  Reset to month
-                </button>
-              )}
-              <button
-                onClick={apply}
-                disabled={!from || !to}
-                className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      ))}
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import { Suspense } from "react";
 import MonthNav from "./month-nav";
-import DailyRangePicker from "./daily-range-picker";
+import DailyRangePicker, { type RangePreset } from "./daily-range-picker";
 
 export const metadata = { title: "Reports – StayShine" };
 export const dynamic = "force-dynamic";
@@ -41,10 +41,40 @@ function isValidDate(s: string | undefined): s is string {
   return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
 }
 
+function rangeForPreset(preset: RangePreset): { chartStart: Date; chartEnd: Date } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch (preset) {
+    case "week": {
+      // Current calendar week Mon–Sun
+      const day = today.getDay(); // 0=Sun
+      const mon = new Date(today); mon.setDate(today.getDate() - ((day + 6) % 7));
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+      return { chartStart: mon, chartEnd: sun };
+    }
+    case "biweekly": {
+      const start14 = new Date(today); start14.setDate(today.getDate() - 13);
+      const end14 = new Date(today); end14.setHours(23,59,59,999);
+      return { chartStart: start14, chartEnd: end14 };
+    }
+    case "month": {
+      const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const mEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return { chartStart: mStart, chartEnd: mEnd };
+    }
+    case "7d":
+    default: {
+      const start7 = new Date(today); start7.setDate(today.getDate() - 6);
+      const end7 = new Date(today); end7.setHours(23,59,59,999);
+      return { chartStart: start7, chartEnd: end7 };
+    }
+  }
+}
+
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams: { month?: string; from?: string; to?: string };
+  searchParams: { month?: string; range?: string };
 }) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
@@ -58,13 +88,12 @@ export default async function ReportsPage({
   const monthLabel = start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const monthParam = `${year}-${pad2(month)}`;
 
-  // Custom date range for the daily chart (falls back to current month)
-  const customFrom = isValidDate(searchParams.from) ? searchParams.from : null;
-  const customTo   = isValidDate(searchParams.to)   ? searchParams.to   : null;
-  const useCustomRange = !!(customFrom && customTo && customFrom <= customTo);
+  const activePreset: RangePreset =
+    (["7d","week","biweekly","month"] as RangePreset[]).includes(searchParams.range as RangePreset)
+      ? (searchParams.range as RangePreset)
+      : "7d";
 
-  const chartStart = useCustomRange ? new Date(`${customFrom}T00:00:00`) : start;
-  const chartEnd   = useCustomRange ? new Date(`${customTo}T23:59:59`)   : end;
+  const { chartStart, chartEnd } = rangeForPreset(activePreset);
 
   // ── parallel queries ────────────────────────────────────────────────────────
   const [
@@ -119,13 +148,11 @@ export default async function ReportsPage({
     }),
   ]);
 
-  // Chart range query — only needed when custom range differs from month range
-  const chartJobs = useCustomRange
-    ? await prisma.job.findMany({
-        where: { scheduledStart: { gte: chartStart, lte: chartEnd } },
-        select: { status: true, scheduledStart: true, flatRate: true },
-      })
-    : jobsThisMonth;
+  // Chart range query — always fetch for the selected preset range
+  const chartJobs = await prisma.job.findMany({
+    where: { scheduledStart: { gte: chartStart, lte: chartEnd } },
+    select: { status: true, scheduledStart: true, flatRate: true },
+  });
 
   // Resolve client names for top clients
   const clientIds = topClientsThisMonth.map((r) => r.clientId);
@@ -182,9 +209,13 @@ export default async function ReportsPage({
   const maxRevenue = Math.max(...dailyData.map((d) => d.revenue + d.projected), 1);
   const maxScheduled = Math.max(...dailyData.map((d) => d.scheduled), 1);
 
-  const chartLabel = useCustomRange
-    ? `${customFrom} → ${customTo}`
-    : monthLabel;
+  const presetLabels: Record<RangePreset, string> = {
+    "7d": "Last 7 days",
+    "week": "This week",
+    "biweekly": "Last 14 days",
+    "month": monthLabel,
+  };
+  const chartLabel = presetLabels[activePreset];
   const chartTotalJobs = chartJobs.length;
 
   // Staff job counts
@@ -322,17 +353,13 @@ export default async function ReportsPage({
                   {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · {chartLabel}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="flex items-center gap-3 shrink-0 flex-wrap">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-500 inline-block" /> Earned</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-300 inline-block" /> Projected</span>
                 </div>
                 <Suspense>
-                  <DailyRangePicker
-                    activeFrom={customFrom}
-                    activeTo={customTo}
-                    month={monthParam}
-                  />
+                  <DailyRangePicker activePreset={activePreset} month={monthParam} />
                 </Suspense>
               </div>
             </div>
