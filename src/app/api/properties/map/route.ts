@@ -42,9 +42,22 @@ export async function GET() {
           },
         },
         jobs: {
-          select: { status: true },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            serviceType: true,
+            scheduledStart: true,
+            scheduledEnd: true,
+            flatRate: true,
+            cleanerPay: true,
+            assignments: {
+              select: { staff: { select: { firstName: true, lastName: true } } },
+              take: 2,
+            },
+            invoice: { select: { total: true, status: true } },
+          },
           orderBy: { scheduledStart: "desc" },
-          take: 20,
         },
       },
       orderBy: { name: "asc" },
@@ -67,6 +80,7 @@ export async function GET() {
       client: p.client,
       totalJobs: p._count.jobs,
       completedJobs: p.jobs.filter((j) => j.status === "COMPLETED").length,
+      jobs: p.jobs,
     }));
 
     return NextResponse.json({ data: mapped });
