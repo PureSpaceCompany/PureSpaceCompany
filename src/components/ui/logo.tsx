@@ -14,15 +14,12 @@ interface LogoProps {
 }
 
 export function Logo({ size = "md", variant = "light", className }: LogoProps) {
-  const iconSize = { sm: 32, md: 42, lg: 56 }[size];
-  const textSize = { sm: "text-base", md: "text-lg", lg: "text-2xl" }[size];
-  const navyColor = variant === "light" ? "#FAF8F3" : "#163A70";
-  const wordmarkStay = variant === "light" ? "#FAF8F3" : "#163A70";
+  const textSize = { sm: "text-base", md: "text-xl", lg: "text-2xl" }[size];
+  const wordmarkColor = variant === "light" ? "#FAF8F3" : "#163A70";
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <LogoMark size={iconSize} variant={variant} />
-      <span className={cn("font-bold tracking-wide leading-none", textSize)} style={{ color: wordmarkStay }}>
+    <div className={cn("flex items-center", className)}>
+      <span className={cn("font-bold tracking-wide leading-none", textSize)} style={{ color: wordmarkColor }}>
         Stay<span style={{ color: "#C8A46A" }}>Shine</span>
       </span>
     </div>

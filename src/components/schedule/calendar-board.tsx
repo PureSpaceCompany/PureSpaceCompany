@@ -76,11 +76,12 @@ export function CalendarBoard() {
       )}
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
+        initialView="timeGridDay"
+        initialDate={new Date()}
         headerToolbar={{
           left: "prev,next today",
           center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay",
+          right: "timeGridDay,timeGridWeek,dayGridMonth",
         }}
         events={events}
         editable={isEditable}

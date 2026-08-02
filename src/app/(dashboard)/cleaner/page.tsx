@@ -196,18 +196,21 @@ export default function CleanerHomePage() {
               ? Math.round((job.checklist.filter((i) => i.isCompleted).length / job.checklist.length) * 100)
               : null;
 
+            const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+
             return (
-              <Link key={job.id} href={`/cleaner/job/${job.id}`}
-                className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{job.title}</p>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{clientName(job.client)}</p>
+              <div key={job.id} className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <Link href={`/cleaner/job/${job.id}`} className="block">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{job.title}</p>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{clientName(job.client)}</p>
+                    </div>
+                    <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
+                      {job.status.replace("_", " ")}
+                    </span>
                   </div>
-                  <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_STYLES[job.status]}`}>
-                    {job.status.replace("_", " ")}
-                  </span>
-                </div>
+                </Link>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
@@ -215,10 +218,11 @@ export default function CleanerHomePage() {
                     {tab === "today" ? fmtTime(job.scheduledStart) : `${fmtDate(job.scheduledStart)} ${fmtTime(job.scheduledStart)}`}
                     {" – "}{fmtTime(job.scheduledEnd)}
                   </span>
-                  <span className="flex items-center gap-1">
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:underline">
                     <MapPin className="w-3.5 h-3.5" />
                     <span className="truncate max-w-[160px]">{address}</span>
-                  </span>
+                  </a>
                 </div>
 
                 {progress !== null && (
@@ -233,7 +237,7 @@ export default function CleanerHomePage() {
                     </div>
                   </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </div>

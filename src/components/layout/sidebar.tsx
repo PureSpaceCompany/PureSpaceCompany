@@ -88,6 +88,7 @@ export function Sidebar() {
               Welcome, {(session.user.name as string).split(" ")[0]}
             </p>
           )}
+
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

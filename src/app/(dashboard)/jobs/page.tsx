@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useJobs } from "@/lib/hooks/use-jobs";
@@ -11,7 +11,7 @@ import { JobModal } from "@/components/modals/job-modal";
 import { formatDateTime, formatCurrency, clientDisplayName } from "@/lib/utils";
 import { Job, JobStatus } from "@/types";
 import Link from "next/link";
-import { Loader2, Plus, Search, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Search, Pencil, Trash2, CheckCircle2, ChevronUp, ChevronDown, ChevronsUpDown, CalendarDays, X } from "lucide-react";
 
 const STATUS_FILTERS = [
   { label: "All", value: "" },
@@ -21,15 +21,28 @@ const STATUS_FILTERS = [
   { label: "Completed", value: "COMPLETED" },
 ];
 
+type SortField = "title" | "client" | "scheduledStart" | "flatRate" | "status";
+type SortDir = "asc" | "desc";
+
+function SortIcon({ field, active, dir }: { field: SortField; active: SortField; dir: SortDir }) {
+  if (field !== active) return <ChevronsUpDown className="w-3.5 h-3.5 opacity-30 ml-1 inline" />;
+  return dir === "asc"
+    ? <ChevronUp className="w-3.5 h-3.5 ml-1 inline text-[#163A70]" />
+    : <ChevronDown className="w-3.5 h-3.5 ml-1 inline text-[#163A70]" />;
+}
+
 export default function JobsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editJob, setEditJob] = useState<Job | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Job | null>(null);
   const [permanent, setPermanent] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("scheduledStart");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -58,12 +71,52 @@ export default function JobsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["jobs"] }),
   });
 
-  const filtered = search
-    ? jobs.filter((j) =>
-        j.title.toLowerCase().includes(search.toLowerCase()) ||
-        clientDisplayName(j.client).toLowerCase().includes(search.toLowerCase())
-      )
-    : jobs;
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "scheduledStart" ? "desc" : "asc");
+    }
+  }
+
+  const filtered = useMemo(() => {
+    let list = [...jobs];
+
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((j) =>
+        j.title.toLowerCase().includes(q) ||
+        clientDisplayName(j.client).toLowerCase().includes(q)
+      );
+    }
+
+    if (dateFilter) {
+      list = list.filter((j) => {
+        const d = new Date(j.scheduledStart);
+        const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        return ds === dateFilter;
+      });
+    }
+
+    list.sort((a, b) => {
+      let va: any, vb: any;
+      switch (sortField) {
+        case "title":        va = a.title; vb = b.title; break;
+        case "client":       va = clientDisplayName(a.client); vb = clientDisplayName(b.client); break;
+        case "scheduledStart": va = new Date(a.scheduledStart).getTime(); vb = new Date(b.scheduledStart).getTime(); break;
+        case "flatRate":     va = Number((a as any).flatRate ?? 0); vb = Number((b as any).flatRate ?? 0); break;
+        case "status":       va = a.status; vb = b.status; break;
+      }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [jobs, search, dateFilter, sortField, sortDir]);
+
+  const thClass = "text-left px-3 md:px-6 py-3 font-medium cursor-pointer hover:text-[#163A70] select-none whitespace-nowrap";
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -77,7 +130,8 @@ export default function JobsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      {/* Filters row */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
         <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -86,11 +140,28 @@ export default function JobsPage() {
             className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
           />
         </div>
+
+        {/* Date filter */}
+        <div className="relative flex items-center gap-1">
+          <CalendarDays className="w-4 h-4 absolute left-3 text-gray-400 pointer-events-none" />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {dateFilter && (
+            <button onClick={() => setDateFilter("")} className="ml-1 p-1 rounded text-gray-400 hover:text-gray-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
         <div className="flex gap-1 flex-wrap">
           {STATUS_FILTERS.map((f) => (
             <button key={f.value} onClick={() => setStatusFilter(f.value)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === f.value ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                statusFilter === f.value ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {f.label}
             </button>
           ))}
@@ -110,12 +181,22 @@ export default function JobsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="text-left px-3 md:px-6 py-3 font-medium">Job</th>
-                  <th className="text-left px-3 md:px-6 py-3 font-medium">Client / Property</th>
-                  <th className="hidden sm:table-cell text-left px-3 md:px-6 py-3 font-medium">Scheduled</th>
+                  <th className={thClass} onClick={() => toggleSort("title")}>
+                    Job <SortIcon field="title" active={sortField} dir={sortDir} />
+                  </th>
+                  <th className={thClass} onClick={() => toggleSort("client")}>
+                    Client / Property <SortIcon field="client" active={sortField} dir={sortDir} />
+                  </th>
+                  <th className={`hidden sm:table-cell ${thClass}`} onClick={() => toggleSort("scheduledStart")}>
+                    Scheduled <SortIcon field="scheduledStart" active={sortField} dir={sortDir} />
+                  </th>
                   <th className="hidden lg:table-cell text-left px-3 md:px-6 py-3 font-medium">Assignee</th>
-                  <th className="hidden md:table-cell text-left px-3 md:px-6 py-3 font-medium">Charged</th>
-                  <th className="text-left px-3 md:px-6 py-3 font-medium">Status</th>
+                  <th className={`hidden md:table-cell ${thClass}`} onClick={() => toggleSort("flatRate")}>
+                    Charged <SortIcon field="flatRate" active={sortField} dir={sortDir} />
+                  </th>
+                  <th className={thClass} onClick={() => toggleSort("status")}>
+                    Status <SortIcon field="status" active={sortField} dir={sortDir} />
+                  </th>
                   <th className="px-3 md:px-6 py-3" />
                 </tr>
               </thead>
@@ -153,9 +234,9 @@ export default function JobsPage() {
                     <td className="px-3 md:px-6 py-3"><JobStatusBadge status={job.status as JobStatus} /></td>
                     <td className="px-3 md:px-6 py-3">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {!["COMPLETED", "CANCELLED"].includes((job as any).status) && (
+                        {!["COMPLETED", "CANCELLED"].includes(job.status) && (
                           <button
-                            onClick={() => completeJob.mutate((job as any).id)}
+                            onClick={() => completeJob.mutate(job.id)}
                             disabled={completeJob.isPending}
                             title="Mark as Completed"
                             className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"

@@ -10,13 +10,11 @@ import { JobChecklist } from "@/components/jobs/job-checklist";
 import { JobStatusBadge } from "@/components/jobs/job-status-badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
-import { MapPin, Clock, CheckCircle, AlertCircle, Loader2, DollarSign } from "lucide-react";
+import { MapPin, CheckCircle, AlertCircle, Loader2, DollarSign } from "lucide-react";
 import { JobStatus } from "@/types";
 
-const NEXT_STATUS: Partial<Record<JobStatus, JobStatus>> = {
-  ASSIGNED: "IN_PROGRESS",
-  IN_PROGRESS: "COMPLETED",
-};
+// Cleaner only needs a single "Complete" button — no clock-in step
+const CAN_COMPLETE: JobStatus[] = ["ASSIGNED", "IN_PROGRESS"];
 
 export default function CleanerJobPage({ params }: { params: { id: string } }) {
   const { data: job, isLoading, isError } = useJob(params.id);
@@ -39,18 +37,11 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
     );
   }
 
-  const nextStatus = NEXT_STATUS[job.status];
-  const isInProgress = job.status === "IN_PROGRESS";
+  const canComplete = CAN_COMPLETE.includes(job.status);
   const isCompleted = job.status === "COMPLETED";
 
-  function handleAction() {
-    if (!nextStatus) return;
-    updateJob.mutate({
-      id: job!.id,
-      status: nextStatus,
-      ...(nextStatus === "IN_PROGRESS" && { actualStart: new Date().toISOString() }),
-      ...(nextStatus === "COMPLETED" && { actualEnd: new Date().toISOString() }),
-    } as any);
+  function handleComplete() {
+    updateJob.mutate({ id: job!.id, status: "COMPLETED", actualEnd: new Date().toISOString() } as any);
   }
 
   return (
@@ -139,20 +130,15 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* Start / Complete CTA */}
-      {nextStatus && (
+      {/* Complete CTA */}
+      {canComplete && (
         <Button
           size="lg"
-          className="w-full text-base py-4"
-          variant={nextStatus === "COMPLETED" ? "secondary" : "primary"}
-          onClick={handleAction}
+          className="w-full text-base py-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={handleComplete}
           loading={updateJob.isPending}
         >
-          {job.status === "ASSIGNED" ? (
-            <><Clock className="w-5 h-5" /> Start Job</>
-          ) : (
-            <><CheckCircle className="w-5 h-5" /> Mark as Complete</>
-          )}
+          <CheckCircle className="w-5 h-5" /> Mark as Complete
         </Button>
       )}
 
@@ -173,7 +159,7 @@ export default function CleanerJobPage({ params }: { params: { id: string } }) {
             jobId={job.id}
             items={job.checklist}
             jobStatus={job.status}
-            readOnly={!isInProgress}
+            readOnly={isCompleted}
           />
         )}
       </div>

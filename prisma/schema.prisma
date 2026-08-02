@@ -195,6 +195,7 @@ model Job {
 
   flatRate        Decimal?      @db.Decimal(10, 2)
   cleanerPay      Decimal?      @db.Decimal(10, 2)
+  cleanerPaidAt   DateTime?
 
   assignments     JobAssignment[]
   checklist       ChecklistItem[]
