@@ -34,7 +34,7 @@ export function StaffModal({ open, onClose, staff }: StaffModalProps) {
 
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", password: "", phone: "",
-    role: "CLEANER", hourlyRate: "", skills: [] as string[],
+    role: "CLEANER", skills: [] as string[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -44,10 +44,10 @@ export function StaffModal({ open, onClose, staff }: StaffModalProps) {
         firstName: staff.firstName, lastName: staff.lastName,
         email: staff.user?.email ?? "", password: "",
         phone: staff.phone ?? "", role: staff.user?.role ?? "CLEANER",
-        hourlyRate: String(staff.hourlyRate), skills: staff.skills ?? [],
+        skills: staff.skills ?? [],
       });
     } else {
-      setForm({ firstName: "", lastName: "", email: "", password: "", phone: "", role: "CLEANER", hourlyRate: "", skills: [] });
+      setForm({ firstName: "", lastName: "", email: "", password: "", phone: "", role: "CLEANER", skills: [] });
     }
     setErrors({});
   }, [staff, open]);
@@ -77,7 +77,6 @@ export function StaffModal({ open, onClose, staff }: StaffModalProps) {
     if (!form.lastName.trim()) e.lastName = "Required";
     if (!isEdit && !form.email.trim()) e.email = "Required";
     if (!isEdit && form.password.length < 8) e.password = "Minimum 8 characters";
-    if (!form.hourlyRate || isNaN(parseFloat(form.hourlyRate))) e.hourlyRate = "Enter a valid rate";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -88,7 +87,6 @@ export function StaffModal({ open, onClose, staff }: StaffModalProps) {
     const payload: any = {
       firstName: form.firstName, lastName: form.lastName,
       phone: form.phone || undefined,
-      hourlyRate: parseFloat(form.hourlyRate),
       skills: form.skills,
     };
     if (!isEdit) {
@@ -131,15 +129,9 @@ export function StaffModal({ open, onClose, staff }: StaffModalProps) {
           </>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Phone">
-            <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="555-0100" className={inputClass} />
-          </FormField>
-          <FormField label="Hourly Rate ($)" required error={errors.hourlyRate}>
-            <input type="number" min="0" step="0.01" value={form.hourlyRate}
-              onChange={(e) => set("hourlyRate", e.target.value)} placeholder="18.00" className={inputClass} />
-          </FormField>
-        </div>
+        <FormField label="Phone">
+          <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="555-0100" className={inputClass} />
+        </FormField>
 
         <FormField label="Skills">
           <div className="flex flex-wrap gap-2 mt-1">

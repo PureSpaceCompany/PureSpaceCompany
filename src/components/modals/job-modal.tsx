@@ -85,9 +85,8 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
     startTime: "11:00",
     endTime: "13:00",
     flatRate: "",
-    cleanerPay: "",
     notes: "",
-    staffIds: [] as string[],
+    staffAssignments: [] as { id: string; pay: string }[],
     checklistItems: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -138,9 +137,11 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
         startTime: sTime || "11:00",
         endTime: eTime || "13:00",
         flatRate: job.flatRate ? String(job.flatRate) : "",
-        cleanerPay: (job as any).cleanerPay ? String((job as any).cleanerPay) : "",
         notes: job.notes ?? "",
-        staffIds: job.assignments?.map((a) => a.staffId) ?? [],
+        staffAssignments: job.assignments?.map((a) => ({
+          id: a.staffId,
+          pay: (job as any).cleanerPay ? String((job as any).cleanerPay) : "",
+        })) ?? [],
         checklistItems: job.checklist?.map((i) => i.label).join("\n") ?? "",
       });
       setTitleTouched(true);
@@ -150,7 +151,7 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
       const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
       setForm({ clientId: "", propertyId: "", title: "", serviceType: "STANDARD", recurrence: "ONCE",
         scheduledDate: defaultDate || todayStr, startTime: "11:00", endTime: "13:00",
-        flatRate: "", cleanerPay: "", notes: "", staffIds: [], checklistItems: "" });
+        flatRate: "", notes: "", staffAssignments: [], checklistItems: "" });
       setTitleTouched(false);
     }
     setErrors({});
@@ -183,9 +184,21 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
   }
 
   function toggleStaff(id: string) {
+    setForm((f) => {
+      const exists = f.staffAssignments.find((a) => a.id === id);
+      return {
+        ...f,
+        staffAssignments: exists
+          ? f.staffAssignments.filter((a) => a.id !== id)
+          : [...f.staffAssignments, { id, pay: "" }],
+      };
+    });
+  }
+
+  function setStaffPay(id: string, pay: string) {
     setForm((f) => ({
       ...f,
-      staffIds: f.staffIds.includes(id) ? f.staffIds.filter((s) => s !== id) : [...f.staffIds, id],
+      staffAssignments: f.staffAssignments.map((a) => a.id === id ? { ...a, pay } : a),
     }));
   }
 
@@ -214,8 +227,10 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
       notes: form.notes || undefined,
       flatRate: form.flatRate ? parseFloat(form.flatRate) : undefined,
       extraItems,
-      cleanerPay: form.cleanerPay ? parseFloat(form.cleanerPay) : null,
-      staffIds: form.staffIds,
+      cleanerPay: form.staffAssignments.length > 0
+        ? form.staffAssignments.reduce((s, a) => s + (parseFloat(a.pay) || 0), 0) || null
+        : null,
+      staffIds: form.staffAssignments.map((a) => a.id),
       checklistItems: form.checklistItems
         ? form.checklistItems.split("\n").map((l) => l.trim()).filter(Boolean)
         : undefined,
@@ -329,15 +344,10 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
             {errors.endTime && <p className="text-xs text-red-500 mt-1">{errors.endTime}</p>}
           </FormField>
 
-          <FormField label="Client Charge ($)" error={errors.flatRate}
+          <FormField label="Client Charge ($)" error={errors.flatRate} className="sm:col-span-2"
             description={form.propertyId && form.flatRate ? "Pre-filled from property default — edit to override" : "Amount billed to the client"}>
             <input type="number" min="0" step="0.01" value={form.flatRate}
               onChange={(e) => set("flatRate", e.target.value)} placeholder="e.g. 200.00" className={inputClass} />
-          </FormField>
-
-          <FormField label="Cleaner Pay ($)" description="Amount paid to the cleaner for this job">
-            <input type="number" min="0" step="0.01" value={form.cleanerPay}
-              onChange={(e) => set("cleanerPay", e.target.value)} placeholder="e.g. 80.00" className={inputClass} />
           </FormField>
 
           {/* Extra charges */}
@@ -384,22 +394,51 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
           </FormField>
         </div>
 
-        {/* Assign staff */}
-        <FormField label="Assign Staff">
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            {staff.map((s: any) => (
-              <label key={s.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-colors ${
-                form.staffIds.includes(s.id) ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                <input type="checkbox" checked={form.staffIds.includes(s.id)}
-                  onChange={() => toggleStaff(s.id)} className="rounded border-gray-300 text-blue-600" />
-                <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-medium shrink-0">
-                  {s.firstName[0]}{s.lastName[0]}
+        {/* Assign staff + per-person pay */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Staff & Pay</p>
+          <div className="space-y-1.5">
+            {staff.map((s: any) => {
+              const assignment = form.staffAssignments.find((a) => a.id === s.id);
+              const isSelected = !!assignment;
+              return (
+                <div key={s.id}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors ${
+                    isSelected ? "border-[#163A70] bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                  }`}>
+                  <input type="checkbox" checked={isSelected} onChange={() => toggleStaff(s.id)}
+                    className="rounded border-gray-300 text-[#163A70] shrink-0" />
+                  <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-semibold shrink-0">
+                    {s.firstName[0]}{s.lastName[0]}
+                  </div>
+                  <span className="text-sm text-gray-800 flex-1 truncate">{s.firstName} {s.lastName}</span>
+                  {isSelected && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs text-gray-400">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={assignment!.pay}
+                        onChange={(e) => setStaffPay(s.id, e.target.value)}
+                        placeholder="Pay"
+                        className="w-20 text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#163A70]/30 focus:border-[#163A70]"
+                      />
+                    </div>
+                  )}
                 </div>
-                <span className="truncate">{s.firstName} {s.lastName}</span>
-              </label>
-            ))}
+              );
+            })}
           </div>
-        </FormField>
+          {form.staffAssignments.length > 1 && (
+            <p className="text-xs text-gray-400 text-right">
+              Total pay: {(() => {
+                const t = form.staffAssignments.reduce((s, a) => s + (parseFloat(a.pay) || 0), 0);
+                return t > 0 ? `$${t.toFixed(2)}` : "—";
+              })()}
+            </p>
+          )}
+        </div>
 
         {!isEdit && (
           <FormField label="Checklist Items" description="One task per line">

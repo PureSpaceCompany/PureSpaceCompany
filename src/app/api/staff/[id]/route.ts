@@ -8,7 +8,7 @@ const updateSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   phone: z.string().optional().nullable(),
-  hourlyRate: z.number().positive().optional(),
+  hourlyRate: z.number().nonnegative().optional(),
   skills: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
   availability: z.any().optional(),

@@ -294,13 +294,20 @@ export default function ReportsRevenue({
                   <div className="bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-2 shadow-xl whitespace-nowrap">
                     <p className="font-semibold text-white mb-1">{m.label}</p>
                     <p className="text-emerald-400">
-                      Completed: {m.completed} job{m.completed !== 1 ? "s" : ""}
+                      {m.completed} job{m.completed !== 1 ? "s" : ""} completed
                     </p>
-                    <div className="border-t border-gray-700 mt-1 pt-1">
+                    <div className="border-t border-gray-700 mt-1 pt-1 space-y-0.5">
                       {revealed ? (
-                        <p style={{ color: "#C8A46A" }} className="font-semibold">
-                          {m.completedRevenue > 0 ? formatCurrency(m.completedRevenue) : "No rate set"}
-                        </p>
+                        <>
+                          <p style={{ color: "#C8A46A" }} className="font-semibold">
+                            {m.completedRevenue > 0 ? formatCurrency(m.completedRevenue) : "No rate set"}
+                          </p>
+                          {m.completed > 0 && m.completedRevenue > 0 && (
+                            <p className="text-gray-400">
+                              Avg: {formatCurrency(m.completedRevenue / m.completed)}/job
+                            </p>
+                          )}
+                        </>
                       ) : (
                         <p className="text-gray-500">Revenue: ••••••</p>
                       )}

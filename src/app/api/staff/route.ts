@@ -12,7 +12,7 @@ const createStaffSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   phone: z.string().optional(),
-  hourlyRate: z.number().positive(),
+  hourlyRate: z.number().nonnegative().optional().default(0),
   skills: z.array(z.string()).default([]),
   availability: z.any().optional(),
 });
