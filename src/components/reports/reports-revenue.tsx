@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Eye, EyeOff, CheckCircle2, DollarSign, TrendingUp, BarChart2, Receipt } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -83,6 +83,7 @@ export default function ReportsRevenue({
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const toggle = (
     <button
@@ -197,96 +198,118 @@ export default function ReportsRevenue({
           </div>
         </div>
         <div className="w-full overflow-x-auto">
-          <svg
-            viewBox={`0 0 ${chartW} ${chartH}`}
-            className="w-full"
-            style={{ minWidth: `${Math.max(300, n * 40)}px`, height: "auto" }}
-            aria-label="Jobs completed by month"
-          >
-            {yTicks.map((tick) => {
-              const y = padTop + plotH - Math.round((tick / maxCompleted) * plotH);
-              return (
-                <g key={tick}>
-                  <line x1={padLeft - 4} y1={y} x2={padLeft + plotW} y2={y} stroke="#f3f4f6" strokeWidth="1" />
-                  <text x={padLeft - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#9ca3af">{tick}</text>
-                </g>
-              );
-            })}
-            {monthBars.map((m, i) => {
-              const x = barX(i);
-              const bh = barH(m.completed);
-              const by = barY(m.completed);
-              const isCurrentMonth = m.year === m.currentYear && m.month === m.currentMonth;
-              const isHovered = hoveredBar === i;
-              const colCenterX = padLeft + i * colW + colW / 2;
+          <div className="relative">
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${chartW} ${chartH}`}
+              className="w-full cursor-crosshair"
+              style={{ minWidth: `${Math.max(300, n * 40)}px`, height: "auto" }}
+              aria-label="Jobs completed by month"
+              onMouseLeave={() => setHoveredBar(null)}
+              onMouseMove={(e) => {
+                const svg = svgRef.current;
+                if (!svg) return;
+                const rect = svg.getBoundingClientRect();
+                const xRatio = chartW / rect.width;
+                const mx = (e.clientX - rect.left) * xRatio;
+                const i = Math.floor((mx - padLeft) / colW);
+                if (i >= 0 && i < n) setHoveredBar(i);
+                else setHoveredBar(null);
+              }}
+            >
+              {yTicks.map((tick) => {
+                const y = padTop + plotH - Math.round((tick / maxCompleted) * plotH);
+                return (
+                  <g key={tick}>
+                    <line x1={padLeft - 4} y1={y} x2={padLeft + plotW} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+                    <text x={padLeft - 6} y={y + 4} textAnchor="end" fontSize="9" fill="#9ca3af">{tick}</text>
+                  </g>
+                );
+              })}
+              {monthBars.map((m, i) => {
+                const x = barX(i);
+                const bh = barH(m.completed);
+                const by = barY(m.completed);
+                const isCurrentMonth = m.year === m.currentYear && m.month === m.currentMonth;
+                const isHovered = hoveredBar === i;
+                const colCenterX = padLeft + i * colW + colW / 2;
 
-              // Tooltip dimensions
-              const tooltipW = 110;
-              const tooltipH = revealed ? 42 : 28;
-              const tooltipX = Math.min(Math.max(colCenterX - tooltipW / 2, padLeft), padLeft + plotW - tooltipW);
-              const tooltipY = Math.max(by - tooltipH - 8, padTop);
+                return (
+                  <g key={i}>
+                    {/* Hover highlight column */}
+                    {isHovered && (
+                      <rect x={padLeft + i * colW} y={padTop} width={colW} height={plotH}
+                        fill="#f9fafb" />
+                    )}
 
-              return (
-                <g key={i}
-                  onMouseEnter={() => setHoveredBar(i)}
-                  onMouseLeave={() => setHoveredBar(null)}
-                  style={{ cursor: m.completed > 0 ? "pointer" : "default" }}
-                >
-                  {/* Invisible hit area for easy hover */}
-                  <rect x={padLeft + i * colW} y={padTop} width={colW} height={plotH + padBottom}
-                    fill="transparent" />
-
-                  {m.completed > 0 && (
-                    <rect x={x} y={by} width={barW} height={bh} rx="3" ry="3"
-                      fill={isCurrentMonth ? GOLD : NAVY}
-                      opacity={isHovered ? 1 : isCurrentMonth ? 1 : 0.85} />
-                  )}
-                  {m.completed === 0 && (
-                    <rect x={x} y={padTop + plotH - 2} width={barW} height={2} rx="1" fill="#e5e7eb" />
-                  )}
-                  {m.completed > 0 && !isHovered && (
-                    <text x={x + barW / 2} y={by - 3} textAnchor="middle" fontSize="9"
-                      fill={isCurrentMonth ? GOLD : NAVY} fontWeight="600">
-                      {m.completed}
-                    </text>
-                  )}
-                  <text x={colCenterX} y={chartH - 4} textAnchor="middle" fontSize="9"
-                    fill={isCurrentMonth ? GOLD : "#6b7280"} fontWeight={isCurrentMonth ? "700" : "400"}>
-                    {m.label}
-                  </text>
-
-                  {/* Tooltip */}
-                  {isHovered && m.completed > 0 && (
-                    <g>
-                      <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH}
-                        rx="4" ry="4" fill={NAVY} />
-                      <text x={tooltipX + tooltipW / 2} y={tooltipY + 12} textAnchor="middle"
-                        fontSize="10" fontWeight="700" fill="#fff">
-                        {m.completed} job{m.completed !== 1 ? "s" : ""}
+                    {m.completed > 0 && (
+                      <rect x={x} y={by} width={barW} height={bh} rx="3" ry="3"
+                        fill={isCurrentMonth ? GOLD : NAVY}
+                        opacity={isHovered ? 1 : isCurrentMonth ? 1 : 0.85} />
+                    )}
+                    {m.completed === 0 && (
+                      <rect x={x} y={padTop + plotH - 2} width={barW} height={2} rx="1" fill="#e5e7eb" />
+                    )}
+                    {m.completed > 0 && (
+                      <text x={x + barW / 2} y={by - 3} textAnchor="middle" fontSize="9"
+                        fill={isCurrentMonth ? GOLD : NAVY} fontWeight="600">
+                        {m.completed}
                       </text>
+                    )}
+                    <text x={colCenterX} y={chartH - 4} textAnchor="middle" fontSize="9"
+                      fill={isCurrentMonth ? GOLD : "#6b7280"} fontWeight={isCurrentMonth ? "700" : "400"}>
+                      {m.label}
+                    </text>
+
+                    {/* Hover vertical line */}
+                    {isHovered && (
+                      <line x1={colCenterX} y1={padTop} x2={colCenterX} y2={padTop + plotH}
+                        stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 2" />
+                    )}
+                  </g>
+                );
+              })}
+              {n > 1 && (
+                <polyline points={trendPoints} fill="none" stroke={GOLD}
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
+              )}
+            </svg>
+
+            {/* HTML tooltip overlay — matches dashboard style */}
+            {hoveredBar !== null && (() => {
+              const m = monthBars[hoveredBar];
+              if (!m || m.completed === 0) return null;
+              const svg = svgRef.current;
+              if (!svg) return null;
+              const rect = svg.getBoundingClientRect();
+              const colCenterX = padLeft + hoveredBar * colW + colW / 2;
+              const xFrac = (colCenterX - padLeft) / (chartW - padLeft - padRight);
+              const leftPx = xFrac * rect.width;
+              const onRight = xFrac < 0.6;
+              return (
+                <div
+                  className="absolute top-0 pointer-events-none z-20"
+                  style={{ left: `${leftPx}px`, transform: onRight ? "translateX(8px)" : "translateX(calc(-100% - 8px))" }}
+                >
+                  <div className="bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-2 shadow-xl whitespace-nowrap">
+                    <p className="font-semibold text-white mb-1">{m.label}</p>
+                    <p className="text-emerald-400">
+                      Completed: {m.completed} job{m.completed !== 1 ? "s" : ""}
+                    </p>
+                    <div className="border-t border-gray-700 mt-1 pt-1">
                       {revealed ? (
-                        <text x={tooltipX + tooltipW / 2} y={tooltipY + 28} textAnchor="middle"
-                          fontSize="9" fill={GOLD} fontWeight="600">
-                          {m.completedRevenue > 0
-                            ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(m.completedRevenue)
-                            : "No flat rate set"}
-                        </text>
+                        <p style={{ color: "#C8A46A" }} className="font-semibold">
+                          {m.completedRevenue > 0 ? formatCurrency(m.completedRevenue) : "No rate set"}
+                        </p>
                       ) : (
-                        <text x={tooltipX + tooltipW / 2} y={tooltipY + 28} textAnchor="middle"
-                          fontSize="9" fill={GOLD} fontWeight="600">
-                          ••••••
-                        </text>
+                        <p className="text-gray-500">Revenue: ••••••</p>
                       )}
-                    </g>
-                  )}
-                </g>
+                    </div>
+                  </div>
+                </div>
               );
-            })}
-            {n > 1 && (
-              <polyline points={trendPoints} fill="none" stroke={GOLD}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
-            )}
-          </svg>
+            })()}
+          </div>
         </div>
       </div>
 

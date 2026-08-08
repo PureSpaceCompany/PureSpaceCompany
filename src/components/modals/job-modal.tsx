@@ -112,8 +112,8 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
       const res = await fetch(`/api/jobs?from=${from}&to=${to}`);
       return ((await res.json()).data as any[]) ?? [];
     },
-    enabled: open && !isEdit && !!selectedDate && !!form.propertyId,
-    staleTime: 30_000,
+    enabled: open && !isEdit && !!selectedDate,
+    staleTime: 0,
   });
 
   const conflictingJob: any = !isEdit && form.propertyId && selectedDate
