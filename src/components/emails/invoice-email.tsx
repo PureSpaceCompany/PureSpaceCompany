@@ -43,7 +43,7 @@ export function InvoiceEmail({
 
                 {/* Header */}
                 <tr>
-                  <td style={{ backgroundColor: "#1e3a5f", padding: "32px 40px", textAlign: "center" }}>
+                  <td style={{ backgroundColor: "#163A70", padding: "32px 40px", textAlign: "center" }}>
                     <p style={{ margin: 0, color: "#ffffff", fontSize: 24, fontWeight: 700 }}>{companyName}</p>
                     <p style={{ margin: "4px 0 0", color: "#93c5fd", fontSize: 13 }}>Professional Cleaning Services</p>
                   </td>
@@ -96,7 +96,7 @@ export function InvoiceEmail({
                             href={paymentUrl}
                             style={{
                               display: "inline-block",
-                              backgroundColor: "#2563eb",
+                              backgroundColor: "#163A70",
                               color: "#ffffff",
                               fontSize: 16,
                               fontWeight: 700,

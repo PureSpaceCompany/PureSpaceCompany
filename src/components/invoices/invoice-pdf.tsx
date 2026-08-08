@@ -65,19 +65,14 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
     doc.setFillColor(22, 58, 112); // navy #163A70
     doc.rect(0, 0, pageW, 18, "F");
 
-    // Logo "S" mark — circle + letter
-    doc.setFillColor(200, 164, 106); // gold
-    doc.circle(margin + 4, 9, 4.5, "F");
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(22, 58, 112);
-    doc.text("S", margin + 4, 11.5, { align: "center" });
-
-    // Company name next to mark
-    doc.setFontSize(11);
+    // Wordmark: "Stay" (white) + "Shine" (gold)
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text(companyName, margin + 11, 11);
+    doc.text("Stay", margin, 11.5);
+    const stayW = doc.getTextWidth("Stay");
+    doc.setTextColor(200, 164, 106);
+    doc.text("Shine", margin + stayW, 11.5);
 
     // INVOICE label right-aligned in header
     doc.setFontSize(8);
@@ -219,12 +214,6 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
     doc.setFont("helvetica", "normal");
 
     let ty = finalY;
-    if (Number(invoice.taxAmount) > 0) {
-      doc.text("Subtotal", labelX, ty); doc.text(formatCurrency(Number(invoice.subtotal)), valueX, ty, { align: "right" }); ty += 6;
-      doc.text(`Tax (${(Number(invoice.taxRate) * 100).toFixed(2)}%)`, labelX, ty); doc.text(formatCurrency(Number(invoice.taxAmount)), valueX, ty, { align: "right" }); ty += 6;
-      doc.setDrawColor(226, 232, 240);
-      doc.line(labelX, ty, valueX, ty); ty += 4;
-    }
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -283,8 +272,8 @@ export interface StatementJob {
   propertyName?: string | null;
   invoiceNumber?: string | null;
   invoiceStatus?: string | null;
-  amount: number;         // pre-tax flat rate / subtotal
-  total: number;          // with tax
+  amount: number;
+  total: number;
 }
 
 interface StatementProps {
@@ -306,18 +295,14 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
     doc.setFillColor(22, 58, 112);
     doc.rect(0, 0, pageW, 18, "F");
 
-    // Logo mark
-    doc.setFillColor(200, 164, 106);
-    doc.circle(margin + 4, 9, 4.5, "F");
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(22, 58, 112);
-    doc.text("S", margin + 4, 11.5, { align: "center" });
-
-    doc.setFontSize(11);
+    // Wordmark: "Stay" (white) + "Shine" (gold)
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text(companyName, margin + 11, 11);
+    doc.text("Stay", margin, 11.5);
+    const stayWS = doc.getTextWidth("Stay");
+    doc.setTextColor(200, 164, 106);
+    doc.text("Shine", margin + stayWS, 11.5);
 
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
@@ -356,7 +341,12 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
     };
 
     // Columns: Date | Property | Invoice # | Status | Total  (no Service column)
-    const rows = jobs.map((j) => [
+    const sorted = [...jobs].sort((a, b) => {
+      const da = a.scheduledStart ? new Date(a.scheduledStart).getTime() : 0;
+      const db = b.scheduledStart ? new Date(b.scheduledStart).getTime() : 0;
+      return da - db;
+    });
+    const rows = sorted.map((j) => [
       j.scheduledStart ? new Date(j.scheduledStart).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—",
       j.propertyName ?? "—",
       j.invoiceNumber ?? "—",

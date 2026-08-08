@@ -16,6 +16,7 @@ const updateSchema = z.object({
   petNotes: z.string().optional().nullable(),
   specialNotes: z.string().optional().nullable(),
   cleaningFee: z.coerce.number().nonnegative().optional().nullable(),
+  soloCleanMins: z.coerce.number().int().positive().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 

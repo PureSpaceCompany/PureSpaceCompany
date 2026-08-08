@@ -9,6 +9,7 @@ const updateSchema = z.object({
   lastName: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  contactEmail: z.string().email().optional().nullable(),
   addressLine1: z.string().optional(),
   addressLine2: z.string().optional().nullable(),
   city: z.string().optional(),

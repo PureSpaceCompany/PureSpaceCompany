@@ -2,10 +2,96 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { getStripe } from "@/lib/stripe";
-import { getResend } from "@/lib/resend";
-import { InvoiceEmail } from "@/components/emails/invoice-email";
-import * as React from "react";
+import { buildInvoiceEmailHtml } from "@/lib/email-templates";
+
+export const runtime = "nodejs";
+
+async function createStripeCheckoutSession({
+  secretKey,
+  unitAmount,
+  productName,
+  description,
+  invoiceId,
+  invoiceNumber,
+  successUrl,
+  cancelUrl,
+  customerEmail,
+}: {
+  secretKey: string;
+  unitAmount: number;
+  productName: string;
+  description: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  successUrl: string;
+  cancelUrl: string;
+  customerEmail: string;
+}) {
+  const params = new URLSearchParams();
+  params.append("payment_method_types[]", "card");
+  params.append("mode", "payment");
+  params.append("line_items[0][price_data][currency]", "usd");
+  params.append("line_items[0][price_data][unit_amount]", String(unitAmount));
+  params.append("line_items[0][price_data][product_data][name]", productName);
+  params.append("line_items[0][price_data][product_data][description]", description);
+  params.append("line_items[0][quantity]", "1");
+  params.append("metadata[invoiceId]", invoiceId);
+  params.append("metadata[invoiceNumber]", invoiceNumber);
+  params.append("success_url", successUrl);
+  params.append("cancel_url", cancelUrl);
+  params.append("customer_email", customerEmail);
+
+  const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message ?? "Stripe checkout session creation failed");
+  }
+
+  return res.json() as Promise<{ id: string; url: string }>;
+}
+
+async function sendEmailViaResend({
+  apiKey,
+  from,
+  to,
+  replyTo,
+  subject,
+  html,
+}: {
+  apiKey: string;
+  from: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+}) {
+  const body: Record<string, unknown> = { from, to: [to], subject, html };
+  if (replyTo) body.reply_to = replyTo;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any)?.message ?? `Resend error ${res.status}`);
+  }
+
+  return res.json();
+}
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -35,47 +121,40 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const recipientEmail: string = body.email ?? clientEmail ?? "";
 
     if (!recipientEmail) {
-      return NextResponse.json({ error: "No email address found for this client. Provide one in the request body as 'email'." }, { status: 400 });
+      return NextResponse.json(
+        { error: "No email address found for this client. Provide one in the request body as 'email'." },
+        { status: 400 }
+      );
     }
 
     const appSettings = await prisma.appSettings.findUnique({ where: { id: "default" } });
     const companyName = appSettings?.companyName ?? "StayShine";
+    const appUrl = process.env.NEXTAUTH_URL ?? "https://www.stayshines.com";
 
-    const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not configured");
 
-    // Create Stripe Checkout session
-    const checkoutSession = await getStripe().checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            unit_amount: Math.round(Number(invoice.total) * 100),
-            product_data: {
-              name: invoice.job.title,
-              description: `Invoice ${invoice.invoiceNumber} — ${companyName}`,
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-      },
-      success_url: `${appUrl}/pay/success?session_id={CHECKOUT_SESSION_ID}&invoice=${invoice.invoiceNumber}`,
-      cancel_url: `${appUrl}/pay/cancelled?invoice=${invoice.invoiceNumber}`,
-      customer_email: recipientEmail,
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) throw new Error("RESEND_API_KEY is not configured");
+
+    const unitAmount = Math.round(Number(invoice.total) * 100);
+    const checkoutSession = await createStripeCheckoutSession({
+      secretKey: stripeKey,
+      unitAmount,
+      productName: invoice.job.title,
+      description: `Invoice ${invoice.invoiceNumber} — ${companyName}`,
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      successUrl: `${appUrl}/pay/success?session_id={CHECKOUT_SESSION_ID}&invoice=${invoice.invoiceNumber}`,
+      cancelUrl: `${appUrl}/pay/cancelled?invoice=${invoice.invoiceNumber}`,
+      customerEmail: recipientEmail,
     });
 
-    // Save the session ID on the invoice so the webhook can find it
     await prisma.invoice.update({
       where: { id: invoice.id },
       data: { stripeSessionId: checkoutSession.id, status: "PENDING" },
     });
 
-    // Format dates
     const serviceDate = new Date(invoice.job.scheduledStart).toLocaleDateString("en-US", {
       month: "long", day: "numeric", year: "numeric",
     });
@@ -88,23 +167,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       ? invoice.client.company
       : [invoice.client.firstName, invoice.client.lastName].filter(Boolean).join(" ") || "Valued Customer";
 
-    // Send email via Resend
     const fromEmail = process.env.RESEND_FROM_EMAIL ?? "invoices@resend.dev";
+    const replyTo = appSettings?.supportEmail || undefined;
 
-    await getResend().emails.send({
+    const html = buildInvoiceEmailHtml({
+      clientName,
+      invoiceNumber: invoice.invoiceNumber,
+      jobTitle: invoice.job.title,
+      serviceDate,
+      amount,
+      dueDate,
+      paymentUrl: checkoutSession.url,
+      companyName,
+    });
+
+    await sendEmailViaResend({
+      apiKey: resendApiKey,
       from: `${companyName} <${fromEmail}>`,
       to: recipientEmail,
+      replyTo,
       subject: `Invoice ${invoice.invoiceNumber} — ${amount} due ${dueDate}`,
-      react: React.createElement(InvoiceEmail, {
-        clientName,
-        invoiceNumber: invoice.invoiceNumber,
-        jobTitle: invoice.job.title,
-        serviceDate,
-        amount,
-        dueDate,
-        paymentUrl: checkoutSession.url!,
-        companyName,
-      }),
+      html,
     });
 
     return NextResponse.json({

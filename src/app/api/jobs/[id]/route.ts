@@ -13,6 +13,7 @@ const updateJobSchema = z.object({
   actualEnd: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
   flatRate: z.number().optional().nullable(),
+  extraItems: z.array(z.object({ description: z.string(), unitPrice: z.number() })).optional(),
   cleanerPay: z.number().min(0).optional().nullable(),
   staffIds: z.array(z.string()).optional(),
 });
@@ -83,7 +84,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     if (staffIds !== undefined) {
       await prisma.jobAssignment.deleteMany({ where: { jobId: params.id } });
-      updateData.status = staffIds.length ? "ASSIGNED" : "UNASSIGNED";
+      // Only update status for staff changes if the job hasn't already reached a terminal state
+      if (!["COMPLETED", "CANCELLED", "NO_SHOW"].includes(existing.status)) {
+        updateData.status = staffIds.length ? "ASSIGNED" : "UNASSIGNED";
+      }
       if (staffIds.length) {
         await prisma.jobAssignment.createMany({
           data: staffIds.map((sid, i) => ({ jobId: params.id, staffId: sid, isLead: i === 0 })),
@@ -109,6 +113,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         invoice: true,
       },
     });
+
+    // When flatRate or extraItems change, auto-update the existing invoice totals and line items
+    if ((rest.flatRate !== undefined || rest.extraItems !== undefined) && updated.invoice) {
+      const base = Number(updated.flatRate ?? 0);
+      const extras = Array.isArray(updated.extraItems) ? (updated.extraItems as any[]) : [];
+      const extrasTotal = extras.reduce((s: number, i: any) => s + i.unitPrice, 0);
+      const subtotal = base + extrasTotal;
+      if (subtotal > 0) {
+        const lineItems = [
+          { description: updated.title, qty: 1, unitPrice: base, total: base },
+          ...extras.map((item: any) => ({ description: item.description, qty: 1, unitPrice: item.unitPrice, total: item.unitPrice })),
+        ];
+        await prisma.invoice.update({
+          where: { id: updated.invoice.id },
+          data: { subtotal, taxRate: 0, taxAmount: 0, total: subtotal, lineItems },
+        });
+      }
+    }
 
     return NextResponse.json({ data: updated });
   } catch (err: any) {

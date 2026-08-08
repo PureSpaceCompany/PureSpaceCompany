@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Calendar, Briefcase, Users, UserCog,
-  FileText, Settings, LogOut, BarChart2, MapPin, Menu, X, Inbox,
+  FileText, Settings, LogOut, BarChart2, MapPin, Menu, X, Inbox, ClipboardList,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Logo } from "@/components/ui/logo";
@@ -15,6 +15,7 @@ import { Logo } from "@/components/ui/logo";
 const adminNav = [
   { href: "/admin",      label: "Dashboard", icon: LayoutDashboard },
   { href: "/schedule",   label: "Schedule",  icon: Calendar },
+  { href: "/planner",    label: "Planner",   icon: ClipboardList },
   { href: "/jobs",       label: "Jobs",      icon: Briefcase },
   { href: "/clients",    label: "Clients",   icon: Users },
   { href: "/properties", label: "Properties",icon: MapPin },
@@ -79,16 +80,15 @@ export function Sidebar() {
     <>
       {/* ── Desktop sidebar ── */}
       <aside className="hidden md:flex flex-col w-64 min-h-screen shrink-0" style={sidebarStyle}>
-        <div className="px-5 pt-5 pb-4 border-b" style={borderStyle}>
-          <a href="https://stayshines.com" target="_blank" rel="noopener noreferrer">
+        <div className="px-5 pt-5 pb-4 border-b flex flex-col items-center text-center" style={borderStyle}>
+          <a href="https://stayshines.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
             <Logo size="md" variant="light" />
           </a>
           {session?.user?.name && (
             <p className="text-xs mt-3 truncate" style={{ color: "rgba(200,164,106,0.85)" }}>
-              Welcome, {(session.user.name as string).split(" ")[0]}
+              Welcome, {session.user.name as string}
             </p>
           )}
-
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

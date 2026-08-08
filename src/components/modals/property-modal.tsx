@@ -21,6 +21,7 @@ const emptyForm = {
   state: "",
   zip: "",
   cleaningFee: "",
+  soloCleanMins: "",
   entryInstructions: "",
   gateCode: "",
   petNotes: "",
@@ -43,6 +44,7 @@ export function PropertyModal({ open, onClose, clientId, property }: PropertyMod
         state: property.state ?? "",
         zip: property.zip ?? "",
         cleaningFee: property.cleaningFee != null ? String(property.cleaningFee) : "",
+        soloCleanMins: property.soloCleanMins != null ? String(property.soloCleanMins) : "",
         entryInstructions: property.entryInstructions ?? "",
         gateCode: property.gateCode ?? "",
         petNotes: property.petNotes ?? "",
@@ -70,10 +72,11 @@ export function PropertyModal({ open, onClose, clientId, property }: PropertyMod
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-      ...form,
-      clientId,
-      cleaningFee: form.cleaningFee ? parseFloat(form.cleaningFee) : null,
-    };
+        ...form,
+        clientId,
+        cleaningFee: form.cleaningFee ? parseFloat(form.cleaningFee) : null,
+        soloCleanMins: form.soloCleanMins ? parseInt(form.soloCleanMins, 10) : null,
+      };
       const url = isEdit ? `/api/properties/${property.id}` : "/api/properties";
       const res = await fetch(url, {
         method: isEdit ? "PATCH" : "POST",
@@ -171,18 +174,31 @@ export function PropertyModal({ open, onClose, clientId, property }: PropertyMod
           </div>
         </div>
 
-        {/* Cleaning fee */}
-        <FormField label="Default Cleaning Fee ($)" description="Pre-fills the client charge when creating a job for this property">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            className={inputClass}
-            placeholder="e.g. 200.00"
-            value={form.cleaningFee}
-            onChange={(e) => set("cleaningFee", e.target.value)}
-          />
-        </FormField>
+        {/* Cleaning fee + solo time */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Default Cleaning Fee ($)" description="Pre-fills client charge for this property">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className={inputClass}
+              placeholder="e.g. 200.00"
+              value={form.cleaningFee}
+              onChange={(e) => set("cleaningFee", e.target.value)}
+            />
+          </FormField>
+          <FormField label="Solo Clean Time (min)" description="Used by the Day Planner to estimate hours">
+            <input
+              type="number"
+              min="15"
+              step="5"
+              className={inputClass}
+              placeholder="e.g. 120"
+              value={form.soloCleanMins}
+              onChange={(e) => set("soloCleanMins", e.target.value)}
+            />
+          </FormField>
+        </div>
 
         {/* Access & notes */}
         <div className="space-y-3 border-t border-gray-100 pt-4">

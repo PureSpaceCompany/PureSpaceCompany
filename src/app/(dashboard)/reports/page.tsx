@@ -2,588 +2,251 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { formatCurrency, clientDisplayName } from "@/lib/utils";
-import {
-  TrendingUp, TrendingDown, DollarSign, Briefcase,
-  Users, CheckCircle2, AlertCircle, CalendarDays,
-} from "lucide-react";
-import Link from "next/link";
-import { Suspense } from "react";
-import MonthNav from "./month-nav";
-import DailyRangePicker, { type RangePreset } from "./daily-range-picker";
+import ReportsRevenue, { type MonthBar } from "@/components/reports/reports-revenue";
 
 export const metadata = { title: "Reports – StayShine" };
 export const dynamic = "force-dynamic";
 
-function parseMonth(raw: string | undefined): { year: number; month: number } {
-  if (raw && /^\d{4}-\d{2}$/.test(raw)) {
-    const [y, m] = raw.split("-").map(Number);
-    return { year: y, month: m };
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const COMPANY_START = new Date(2025, 6, 1); // July 2025 (month index 6)
+
+function yearRange(year: number) {
+  return {
+    start: new Date(year, 0, 1),
+    end:   new Date(year, 11, 31, 23, 59, 59, 999),
+  };
+}
+
+function monthsFrom(from: Date, to: Date): { year: number; month: number }[] {
+  const list: { year: number; month: number }[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const toMonth = new Date(to.getFullYear(), to.getMonth(), 1);
+  while (cur <= toMonth) {
+    list.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+    cur.setMonth(cur.getMonth() + 1);
   }
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  return list;
 }
 
-function monthRange(year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end   = new Date(year, month, 0, 23, 59, 59, 999);
-  return { start, end };
+function monthLabel(year: number, month: number) {
+  return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 }
 
-function prevMonth(y: number, m: number) {
-  const d = new Date(y, m - 2, 1);
-  return { year: d.getFullYear(), month: d.getMonth() + 1 };
-}
-
-function pad2(n: number) { return String(n).padStart(2, "0"); }
-
-function isValidDate(s: string | undefined): s is string {
-  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
-}
-
-function rangeForPreset(preset: RangePreset): { chartStart: Date; chartEnd: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  switch (preset) {
-    case "week": {
-      // Current calendar week Mon–Sun
-      const day = today.getDay(); // 0=Sun
-      const mon = new Date(today); mon.setDate(today.getDate() - ((day + 6) % 7));
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
-      return { chartStart: mon, chartEnd: sun };
-    }
-    case "biweekly": {
-      const start14 = new Date(today); start14.setDate(today.getDate() - 13);
-      const end14 = new Date(today); end14.setHours(23,59,59,999);
-      return { chartStart: start14, chartEnd: end14 };
-    }
-    case "month": {
-      const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const mEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      return { chartStart: mStart, chartEnd: mEnd };
-    }
-    case "7d":
-    default: {
-      const start7 = new Date(today); start7.setDate(today.getDate() - 6);
-      const end7 = new Date(today); end7.setHours(23,59,59,999);
-      return { chartStart: start7, chartEnd: end7 };
-    }
-  }
-}
-
-export default async function ReportsPage({
-  searchParams,
-}: {
-  searchParams: { month?: string; range?: string };
-}) {
+export default async function ReportsPage() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
   if (!session || !["ADMIN", "MANAGER"].includes(role)) redirect("/login");
 
-  const { year, month } = parseMonth(searchParams.month);
-  const { start, end } = monthRange(year, month);
-  const prev = prevMonth(year, month);
-  const { start: prevStart, end: prevEnd } = monthRange(prev.year, prev.month);
+  const now = new Date();
+  const reportYear = now.getFullYear();
+  const { start: yearStart, end: yearEnd } = yearRange(reportYear);
 
-  const monthLabel = start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const monthParam = `${year}-${pad2(month)}`;
-
-  const activePreset: RangePreset =
-    (["7d","week","biweekly","month"] as RangePreset[]).includes(searchParams.range as RangePreset)
-      ? (searchParams.range as RangePreset)
-      : "7d";
-
-  const { chartStart, chartEnd } = rangeForPreset(activePreset);
-
-  // ── parallel queries ────────────────────────────────────────────────────────
+  // ── All jobs this year (for year KPIs + monthly chart) ───────────────────
   const [
-    jobsThisMonth,
-    jobsPrevMonth,
-    invoicesThisMonth,
-    invoicesPrevMonth,
-    topClientsThisMonth,
-    staffStats,
-    serviceTypeCounts,
+    allJobs,
+    paidInvoicesAgg,
+    allJobAssignments,
+    propertiesWithJobs,
   ] = await Promise.all([
-    // Jobs this month — include flatRate for daily revenue
     prisma.job.findMany({
-      where: { scheduledStart: { gte: start, lte: end } },
-      select: { status: true, scheduledStart: true, flatRate: true },
+      where: { scheduledStart: { gte: yearStart, lte: yearEnd } },
+      select: {
+        id: true,
+        status: true,
+        scheduledStart: true,
+        flatRate: true,
+        propertyId: true,
+        property: { select: { id: true, name: true, addressLine1: true, city: true } },
+      },
     }),
-    // Jobs previous month (for comparison)
-    prisma.job.count({ where: { scheduledStart: { gte: prevStart, lte: prevEnd } } }),
-    // Invoices this month (non-void) — for KPI tiles only
-    prisma.invoice.findMany({
-      where: { createdAt: { gte: start, lte: end }, status: { not: "VOID" } },
-      select: { total: true, paidAmount: true, status: true },
-    }),
-    // Invoices previous month
+    // Invoices paid this year
     prisma.invoice.aggregate({
-      where: { createdAt: { gte: prevStart, lte: prevEnd }, status: { not: "VOID" } },
-      _sum: { total: true },
+      where: {
+        status: "PAID",
+        paidAt: { gte: yearStart, lte: yearEnd },
+      },
+      _sum: { paidAmount: true, total: true },
     }),
-    // Top clients this month by job count
-    prisma.job.groupBy({
-      by: ["clientId"],
-      where: { scheduledStart: { gte: start, lte: end } },
-      _count: { id: true },
-      _sum: { flatRate: true },
-      orderBy: { _count: { id: "desc" } },
-      take: 5,
-    }),
-    // Staff performance this month
+    // All assignments for completed jobs this year — for cleaner table
     prisma.jobAssignment.findMany({
-      where: { job: { scheduledStart: { gte: start, lte: end }, status: "COMPLETED" } },
+      where: {
+        job: {
+          scheduledStart: { gte: yearStart, lte: yearEnd },
+          status: "COMPLETED",
+        },
+      },
       select: {
         staffId: true,
         staff: { select: { firstName: true, lastName: true } },
+        job: { select: { flatRate: true } },
       },
     }),
-    // Service type breakdown
-    prisma.job.groupBy({
-      by: ["serviceType"],
-      where: { scheduledStart: { gte: start, lte: end } },
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
+    // Properties with job counts for this year (all statuses except cancelled)
+    prisma.property.findMany({
+      select: {
+        id: true,
+        name: true,
+        addressLine1: true,
+        city: true,
+        jobs: {
+          where: {
+            scheduledStart: { gte: yearStart, lte: yearEnd },
+            status: { not: "CANCELLED" },
+          },
+          select: { id: true, status: true, flatRate: true },
+        },
+      },
     }),
   ]);
 
-  // Chart range query — always fetch for the selected preset range
-  const chartJobs = await prisma.job.findMany({
-    where: { scheduledStart: { gte: chartStart, lte: chartEnd } },
-    select: { status: true, scheduledStart: true, flatRate: true },
+  // ── Year KPIs ─────────────────────────────────────────────────────────────
+  const completedJobs = allJobs.filter((j) => j.status === "COMPLETED");
+  const scheduledJobs = allJobs.filter(
+    (j) => !["CANCELLED", "COMPLETED"].includes(j.status),
+  );
+
+  const completedJobsCount = completedJobs.length;
+  const completedRevenue = completedJobs.reduce((s, j) => s + Number(j.flatRate ?? 0), 0);
+  const paidInvoiceTotal = Number(paidInvoicesAgg._sum.paidAmount ?? paidInvoicesAgg._sum.total ?? 0);
+  const projectedRevenue =
+    completedRevenue +
+    scheduledJobs.reduce((s, j) => s + Number(j.flatRate ?? 0), 0);
+
+  const billedJobs = completedJobs.filter((j) => Number(j.flatRate ?? 0) > 0);
+  const avgBilledJob = billedJobs.length > 0 ? completedRevenue / billedJobs.length : 0;
+
+  // ── Monthly bar chart data (July 2025 → current month) ────────────────────
+  const months = monthsFrom(COMPANY_START, now);
+  const currentYear  = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const monthBars: MonthBar[] = months.map(({ year, month }) => {
+    const mStart = new Date(year, month - 1, 1);
+    const mEnd   = new Date(year, month, 0, 23, 59, 59, 999);
+    const mJobs  = allJobs.filter((j) => {
+      const d = new Date(j.scheduledStart);
+      return d >= mStart && d <= mEnd;
+    });
+    const mCompleted = mJobs.filter((j) => j.status === "COMPLETED");
+    return {
+      label: monthLabel(year, month),
+      year,
+      month,
+      completed: mCompleted.length,
+      completedRevenue: mCompleted.reduce((s, j) => s + Number(j.flatRate ?? 0), 0),
+      currentYear,
+      currentMonth,
+    };
   });
 
-  // Resolve client names for top clients
-  const clientIds = topClientsThisMonth.map((r) => r.clientId);
-  const clientProfiles = await prisma.clientProfile.findMany({
-    where: { id: { in: clientIds } },
-    select: { id: true, firstName: true, lastName: true, company: true },
+  const maxCompleted = Math.max(...monthBars.map((m) => m.completed), 1);
+
+  // Trend line: linear regression on completed counts
+  const n = monthBars.length;
+  const xMean = (n - 1) / 2;
+  const yMean = monthBars.reduce((s, m) => s + m.completed, 0) / n;
+  let num = 0, den = 0;
+  monthBars.forEach((m, i) => {
+    num += (i - xMean) * (m.completed - yMean);
+    den += (i - xMean) ** 2;
   });
-  const clientMap = Object.fromEntries(clientProfiles.map((c) => [c.id, c]));
+  const slope     = den !== 0 ? num / den : 0;
+  const intercept = yMean - slope * xMean;
+  const trendValues = monthBars.map((_, i) => intercept + slope * i);
 
-  // ── derived numbers ─────────────────────────────────────────────────────────
-  const totalJobs     = jobsThisMonth.length;
-  const completedJobs = jobsThisMonth.filter((j) => j.status === "COMPLETED").length;
-  const cancelledJobs = jobsThisMonth.filter((j) => j.status === "CANCELLED").length;
-  const completionRate = totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
+  // SVG chart dimensions
+  const chartW   = 600;
+  const chartH   = 160;
+  const padLeft  = 32;
+  const padRight = 12;
+  const padTop   = 12;
+  const padBottom = 24;
+  const plotW = chartW - padLeft - padRight;
+  const plotH = chartH - padTop - padBottom;
+  const barW  = n > 0 ? Math.max(plotW / n - 4, 6) : 20;
+  const colW  = n > 0 ? plotW / n : plotW;
 
-  const totalBilled   = invoicesThisMonth.reduce((s, i) => s + Number(i.total), 0);
-  const totalReceived = invoicesThisMonth
-    .filter((i) => i.status === "PAID")
-    .reduce((s, i) => s + Number(i.paidAmount ?? i.total), 0);
-  const totalOutstanding = invoicesThisMonth
-    .filter((i) => ["PENDING", "OVERDUE"].includes(i.status))
-    .reduce((s, i) => s + Number(i.total), 0);
-  const overdueAmt = invoicesThisMonth
-    .filter((i) => i.status === "OVERDUE")
-    .reduce((s, i) => s + Number(i.total), 0);
+  function barX(i: number) { return padLeft + i * colW + (colW - barW) / 2; }
+  function barY(val: number) { return padTop + plotH - Math.round((val / maxCompleted) * plotH); }
+  function barH(val: number) { return Math.round((val / maxCompleted) * plotH); }
 
-  const prevBilledAmt = Number(invoicesPrevMonth._sum.total ?? 0);
-  const billedDelta   = prevBilledAmt > 0 ? ((totalBilled - prevBilledAmt) / prevBilledAmt) * 100 : null;
-  const jobsDelta     = jobsPrevMonth > 0 ? ((totalJobs - jobsPrevMonth) / jobsPrevMonth) * 100 : null;
+  // Trend line polyline points
+  const trendPoints = trendValues
+    .map((v, i) => {
+      const x = padLeft + i * colW + colW / 2;
+      const clamped = Math.max(0, Math.min(v, maxCompleted));
+      const y = padTop + plotH - Math.round((clamped / maxCompleted) * plotH);
+      return `${x},${y}`;
+    })
+    .join(" ");
 
-  // Daily chart — per day: scheduled count, completed count, earned revenue, projected revenue
-  interface DayData { scheduled: number; completed: number; revenue: number; projected: number; date: Date }
-  const dayMap = new Map<string, DayData>();
-  for (let d = new Date(chartStart); d <= chartEnd; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
-    const key = d.toISOString().slice(0, 10);
-    dayMap.set(key, { scheduled: 0, completed: 0, revenue: 0, projected: 0, date: new Date(d) });
-  }
-  for (const job of chartJobs) {
-    const key = new Date(job.scheduledStart).toISOString().slice(0, 10);
-    const entry = dayMap.get(key);
-    if (!entry) continue;
-    entry.scheduled++;
-    if (job.status === "COMPLETED") {
-      entry.completed++;
-      entry.revenue += Number(job.flatRate ?? 0);
-    } else if (job.status !== "CANCELLED" && job.status !== "NO_SHOW") {
-      // ASSIGNED / UNASSIGNED / IN_PROGRESS — count toward projected income
-      entry.projected += Number(job.flatRate ?? 0);
-    }
-  }
-  const dailyData = Array.from(dayMap.values());
-  // Use revenue for bar height; fall back to job count if no flatRates are set
-  const hasAnyRevenue = dailyData.some((d) => d.revenue + d.projected > 0);
-  const maxRevenue = Math.max(...dailyData.map((d) => d.revenue + d.projected), 1);
-  const maxScheduled = Math.max(...dailyData.map((d) => d.scheduled), 1);
+  // Y-axis ticks
+  const yTicks = [0, Math.round(maxCompleted / 2), maxCompleted];
 
-  const presetLabels: Record<RangePreset, string> = {
-    "7d": "Last 7 days",
-    "week": "This week",
-    "biweekly": "Last 14 days",
-    "month": monthLabel,
-  };
-  const chartLabel = presetLabels[activePreset];
-  const chartTotalJobs = chartJobs.length;
+  // ── Jobs by property (desc by count, exclude no-property) ─────────────────
+  const propRows = propertiesWithJobs
+    .filter((p) => p.jobs.length > 0)
+    .map((p) => ({
+      name: p.name,
+      address: [p.addressLine1, p.city].filter(Boolean).join(", "),
+      total: p.jobs.length,
+      completed: p.jobs.filter((j) => j.status === "COMPLETED").length,
+      revenue: p.jobs.reduce((s, j) => s + Number(j.flatRate ?? 0), 0),
+    }))
+    .sort((a, b) => b.total - a.total);
 
-  // Staff job counts
-  const staffCounts = new Map<string, { name: string; count: number }>();
-  for (const a of staffStats) {
+  // ── Jobs by cleaner ────────────────────────────────────────────────────────
+  const cleanerMap = new Map<string, { name: string; count: number; revenue: number }>();
+  for (const a of allJobAssignments) {
     const key = a.staffId;
-    if (!staffCounts.has(key)) {
-      staffCounts.set(key, {
+    if (!cleanerMap.has(key)) {
+      cleanerMap.set(key, {
         name: `${a.staff.firstName} ${a.staff.lastName}`,
         count: 0,
+        revenue: 0,
       });
     }
-    staffCounts.get(key)!.count++;
+    const entry = cleanerMap.get(key)!;
+    entry.count++;
+    entry.revenue += Number(a.job.flatRate ?? 0);
   }
-  const staffLeaderboard = Array.from(staffCounts.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-  const maxStaffJobs = staffLeaderboard[0]?.count ?? 1;
-
-  const serviceColors: Record<string, string> = {
-    STANDARD:         "bg-blue-500",
-    DEEP_CLEAN:       "bg-violet-500",
-    MOVE_IN_OUT:      "bg-orange-500",
-    POST_CONSTRUCTION:"bg-amber-500",
-    RECURRING:        "bg-emerald-500",
-    COMMERCIAL:       "bg-cyan-500",
-  };
-  const maxServiceCount = serviceTypeCounts[0]?._count.id ?? 1;
-
-  // Status distribution for this month's jobs
-  const statusDist = [
-    { label: "Completed",   count: completedJobs,                     color: "bg-emerald-500" },
-    { label: "Cancelled",   count: cancelledJobs,                     color: "bg-red-400" },
-    { label: "In Progress", count: jobsThisMonth.filter((j) => j.status === "IN_PROGRESS").length, color: "bg-amber-400" },
-    { label: "Assigned",    count: jobsThisMonth.filter((j) => j.status === "ASSIGNED").length,    color: "bg-blue-500" },
-    { label: "Unassigned",  count: jobsThisMonth.filter((j) => j.status === "UNASSIGNED").length,  color: "bg-gray-400" },
-  ];
+  const cleanerRows = Array.from(cleanerMap.values()).sort((a, b) => b.count - a.count);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
 
-        {/* Header with month navigator */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{monthLabel}</p>
-          </div>
-          <Suspense>
-            <MonthNav year={year} month={month} />
-          </Suspense>
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{reportYear} overview — since July 2025</p>
         </div>
 
-        {/* KPI row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total jobs */}
-          <div className="bg-white rounded-xl shadow-sm p-5 border-t-4 border-t-blue-500">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Jobs</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 leading-none">{totalJobs}</p>
-                {jobsDelta !== null && (
-                  <p className={`text-xs mt-1.5 flex items-center gap-0.5 ${jobsDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                    {jobsDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    {Math.abs(jobsDelta).toFixed(0)}% vs last month
-                  </p>
-                )}
-              </div>
-              <div className="p-2.5 rounded-xl bg-blue-500"><Briefcase className="w-5 h-5 text-white" /></div>
-            </div>
-          </div>
-
-          {/* Revenue billed */}
-          <div className="bg-white rounded-xl shadow-sm p-5 border-t-4 border-t-emerald-500">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Revenue Billed</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 leading-none">{formatCurrency(totalBilled)}</p>
-                {billedDelta !== null && (
-                  <p className={`text-xs mt-1.5 flex items-center gap-0.5 ${billedDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                    {billedDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    {Math.abs(billedDelta).toFixed(0)}% vs last month
-                  </p>
-                )}
-              </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500"><DollarSign className="w-5 h-5 text-white" /></div>
-            </div>
-          </div>
-
-          {/* Collected */}
-          <div className="bg-white rounded-xl shadow-sm p-5 border-t-4 border-t-violet-500">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Collected</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1 leading-none">{formatCurrency(totalReceived)}</p>
-                <p className="text-xs mt-1.5 text-gray-400">
-                  {totalBilled > 0 ? Math.round((totalReceived / totalBilled) * 100) : 0}% collection rate
-                </p>
-              </div>
-              <div className="p-2.5 rounded-xl bg-violet-500"><CheckCircle2 className="w-5 h-5 text-white" /></div>
-            </div>
-          </div>
-
-          {/* Outstanding / overdue */}
-          <div className={`bg-white rounded-xl shadow-sm p-5 border-t-4 ${overdueAmt > 0 ? "border-t-red-500" : "border-t-amber-400"}`}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Outstanding</p>
-                <p className={`text-3xl font-bold mt-1 leading-none ${totalOutstanding > 0 ? "text-amber-600" : "text-gray-400"}`}>
-                  {formatCurrency(totalOutstanding)}
-                </p>
-                {overdueAmt > 0 && (
-                  <p className="text-xs mt-1.5 text-red-500 flex items-center gap-0.5">
-                    <AlertCircle className="w-3 h-3" /> {formatCurrency(overdueAmt)} overdue
-                  </p>
-                )}
-              </div>
-              <div className={`p-2.5 rounded-xl ${overdueAmt > 0 ? "bg-red-500" : "bg-amber-400"}`}>
-                <AlertCircle className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Daily activity chart + completion ring */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-          {/* Daily chart */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            {/* Chart header */}
-            <div className="flex items-start justify-between gap-4 mb-1 flex-wrap">
-              <div>
-                <h2 className="font-semibold text-gray-900 text-sm md:text-base">Daily Activity</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {chartTotalJobs} job{chartTotalJobs !== 1 ? "s" : ""} · {chartLabel}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-500 inline-block" /> Earned</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-300 inline-block" /> Projected</span>
-                </div>
-                <Suspense>
-                  <DailyRangePicker activePreset={activePreset} month={monthParam} />
-                </Suspense>
-              </div>
-            </div>
-
-            {chartTotalJobs === 0 ? (
-              <div className="flex items-center justify-center h-44 text-gray-300 mt-4">
-                <p className="text-sm">No jobs in this range</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-end gap-px h-44 mt-4">
-                  {dailyData.map((day, i) => {
-                    const totalIncome = day.revenue + day.projected;
-                    const hasActivity = day.scheduled > 0;
-                    const todayStr = new Date().toISOString().slice(0, 10);
-                    const isToday = day.date.toISOString().slice(0, 10) === todayStr;
-                    const dayLabel = day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-                    // Bar height proportional to income when available, else job count
-                    const barPct = hasAnyRevenue
-                      ? totalIncome > 0 ? Math.max(Math.round((totalIncome / maxRevenue) * 100), 4) : (hasActivity ? 2 : 0)
-                      : hasActivity ? Math.max(Math.round((day.scheduled / maxScheduled) * 100), 4) : 0;
-
-                    // Within the bar: earned (green) at bottom, projected (blue) on top
-                    const earnedFrac = totalIncome > 0 ? day.revenue / totalIncome : 0;
-                    const projFrac   = totalIncome > 0 ? day.projected / totalIncome : 0;
-                    // If no flatRates, show green/blue split by completed vs scheduled count
-                    const earnedFracFallback = day.scheduled > 0 ? day.completed / day.scheduled : 0;
-
-                    const earnedPct  = hasAnyRevenue ? Math.round(earnedFrac * 100)  : Math.round(earnedFracFallback * 100);
-                    const projPct    = hasAnyRevenue ? Math.round(projFrac * 100)    : Math.round((1 - earnedFracFallback) * 100);
-
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full relative group">
-                        {/* Tooltip */}
-                        {hasActivity && (
-                          <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[11px] rounded-lg px-2.5 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg">
-                            <p className="font-semibold mb-0.5">{dayLabel}</p>
-                            <p className="text-gray-300">{day.completed}/{day.scheduled} job{day.scheduled !== 1 ? "s" : ""} completed</p>
-                            {day.revenue > 0 && <p className="text-emerald-400">Earned: {formatCurrency(day.revenue)}</p>}
-                            {day.projected > 0 && <p className="text-blue-300">Projected: {formatCurrency(day.projected)}</p>}
-                            {totalIncome > 0 && <p className="text-white font-semibold border-t border-gray-700 mt-1 pt-1">Total: {formatCurrency(totalIncome)}</p>}
-                          </div>
-                        )}
-
-                        {/* Stacked bar: earned (green bottom) + projected (blue top) */}
-                        {barPct > 0 && (
-                          <div
-                            className="w-full relative rounded-t overflow-hidden"
-                            style={{ height: `${barPct}%` }}
-                          >
-                            {/* Projected (blue) — fills the full bar as background */}
-                            <div className={`absolute inset-0 rounded-t ${projPct > 0 || !hasAnyRevenue ? "bg-blue-200" : "bg-gray-100"}`} />
-                            {/* Earned (green) — sits at the bottom */}
-                            {earnedPct > 0 && (
-                              <div
-                                className="absolute bottom-0 left-0 right-0 bg-emerald-500"
-                                style={{ height: `${earnedPct}%` }}
-                              />
-                            )}
-                          </div>
-                        )}
-                        {barPct === 0 && hasActivity && (
-                          <div className="w-full rounded-t bg-gray-100" style={{ height: "2%" }} />
-                        )}
-
-                        {/* Today dot */}
-                        {isToday && (
-                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* X-axis — show date label every ~7 bars, fewer if range is short */}
-                {(() => {
-                  const total = dailyData.length;
-                  const step = total <= 14 ? 2 : total <= 31 ? 7 : 14;
-                  return (
-                    <div className="flex items-end gap-px mt-2">
-                      {dailyData.map((day, i) => (
-                        <div key={i} className="flex-1 text-center text-[9px] text-gray-300 leading-none">
-                          {i % step === 0
-                            ? day.date.toLocaleDateString("en-US", total <= 14 ? { month: "short", day: "numeric" } : { day: "numeric" })
-                            : ""}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </>
-            )}
-          </div>
-
-          {/* Job completion ring */}
-          <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col">
-            <h2 className="font-semibold text-gray-900 mb-4">Job Breakdown</h2>
-            <div className="flex items-center justify-center mb-4">
-              <div className="relative w-28 h-28">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f3f4f6" strokeWidth="3.5" />
-                  <circle
-                    cx="18" cy="18" r="15.9" fill="none"
-                    stroke="#10b981" strokeWidth="3.5"
-                    strokeDasharray={`${completionRate} ${100 - completionRate}`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-900">{completionRate}%</span>
-                  <span className="text-xs text-gray-400">done</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2 mt-auto">
-              {statusDist.map(({ label, count, color }) => (
-                <div key={label} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${color}`} />
-                    <span className="text-gray-600">{label}</span>
-                  </div>
-                  <span className="font-semibold text-gray-900">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Three column: service types + top clients + staff */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-          {/* Service type breakdown */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Service Types</h2>
-            {serviceTypeCounts.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No jobs this month</p>
-            ) : (
-              <div className="space-y-3">
-                {serviceTypeCounts.map(({ serviceType, _count }) => (
-                  <div key={serviceType}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-700 capitalize">{serviceType.replace(/_/g, " ").toLowerCase()}</span>
-                      <span className="font-semibold text-gray-900">{_count.id}</span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${serviceColors[serviceType] ?? "bg-gray-400"}`}
-                        style={{ width: `${Math.round((_count.id / maxServiceCount) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Top clients */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">Top Clients</h2>
-              <Link href="/clients" className="text-xs text-blue-600 hover:underline">View all</Link>
-            </div>
-            {topClientsThisMonth.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No client activity</p>
-            ) : (
-              <div className="space-y-3">
-                {topClientsThisMonth.map((row) => {
-                  const c = clientMap[row.clientId];
-                  const name = c ? clientDisplayName(c) : "Unknown";
-                  const maxCount = topClientsThisMonth[0]._count.id;
-                  return (
-                    <div key={row.clientId}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                          {name[0]?.toUpperCase()}
-                        </div>
-                        <span className="text-sm text-gray-700 flex-1 truncate">{name}</span>
-                        <span className="text-sm font-semibold text-gray-900">{row._count.id}</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${Math.round((row._count.id / maxCount) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Staff leaderboard */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">Staff Performance</h2>
-              <Link href="/staff" className="text-xs text-blue-600 hover:underline">View all</Link>
-            </div>
-            {staffLeaderboard.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No completed jobs this month</p>
-            ) : (
-              <div className="space-y-3">
-                {staffLeaderboard.map((s, i) => (
-                  <div key={s.name}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                        i === 0 ? "bg-amber-400 text-white" : i === 1 ? "bg-gray-300 text-gray-700" : i === 2 ? "bg-orange-300 text-white" : "bg-gray-100 text-gray-500"
-                      }`}>{i + 1}</span>
-                      <span className="text-sm text-gray-700 flex-1 truncate">{s.name}</span>
-                      <span className="text-sm font-semibold text-gray-900">{s.count} job{s.count !== 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-violet-500 rounded-full"
-                        style={{ width: `${Math.round((s.count / maxStaffJobs) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        {/* KPI row + chart + tables */}
+        <ReportsRevenue
+          completedJobsCount={completedJobsCount}
+          completedRevenue={completedRevenue}
+          paidInvoiceTotal={paidInvoiceTotal}
+          projectedRevenue={projectedRevenue}
+          avgBilledJob={avgBilledJob}
+          billedJobsCount={billedJobs.length}
+          scheduledJobsCount={scheduledJobs.length}
+          reportYear={reportYear}
+          propRows={propRows}
+          cleanerRows={cleanerRows}
+          monthBars={monthBars}
+          trendPoints={trendPoints}
+          chartW={chartW}
+          chartH={chartH}
+          padLeft={padLeft}
+          padRight={padRight}
+          padTop={padTop}
+          padBottom={padBottom}
+          n={n}
+          yTicks={yTicks}
+          maxCompleted={maxCompleted}
+        />
 
       </div>
     </div>

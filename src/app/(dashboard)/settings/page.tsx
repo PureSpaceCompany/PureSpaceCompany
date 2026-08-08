@@ -125,7 +125,7 @@ export default function SettingsPage() {
   });
 
   const updateUser = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<{ role: Role; email: string; password: string }> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<{ role: Role; email: string; password: string; firstName: string; lastName: string }> }) => {
       const res = await fetch(`/api/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -156,7 +156,10 @@ export default function SettingsPage() {
   }
 
   function openEdit(user: AppUser) {
-    setUserForm({ email: user.email, password: "", role: user.role, firstName: "", lastName: "" });
+    const profile = user.staffProfile ?? user.clientProfile;
+    const firstName = profile?.firstName ?? "";
+    const lastName = profile?.lastName ?? "";
+    setUserForm({ email: user.email, password: "", role: user.role, firstName, lastName });
     setUserError("");
     setUserModal({ mode: "edit", user });
   }
@@ -171,9 +174,10 @@ export default function SettingsPage() {
     if (!userModal) return;
     if (userModal.mode === "create") {
       if (!userForm.email || !userForm.password) { setUserError("Email and password are required"); return; }
+      if (!userForm.firstName.trim() || !userForm.lastName.trim()) { setUserError("First and last name are required"); return; }
       createUser.mutate(userForm);
     } else if (userModal.mode === "edit") {
-      updateUser.mutate({ id: userModal.user.id, data: { role: userForm.role, email: userForm.email } });
+      updateUser.mutate({ id: userModal.user.id, data: { role: userForm.role, email: userForm.email, firstName: userForm.firstName, lastName: userForm.lastName } });
     } else if (userModal.mode === "password") {
       if (!userForm.password || userForm.password.length < 8) { setUserError("Password must be at least 8 characters"); return; }
       updateUser.mutate({ id: userModal.user.id, data: { password: userForm.password } });
@@ -359,8 +363,20 @@ export default function SettingsPage() {
             <div className="px-6 py-4 space-y-4">
               {userModal.mode !== "password" && (
                 <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">First Name {userModal.mode === "create" && <span className="text-red-500">*</span>}</label>
+                      <input className={inputClass} value={userForm.firstName}
+                        onChange={(e) => setUserForm((f) => ({ ...f, firstName: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-gray-700">Last Name {userModal.mode === "create" && <span className="text-red-500">*</span>}</label>
+                      <input className={inputClass} value={userForm.lastName}
+                        onChange={(e) => setUserForm((f) => ({ ...f, lastName: e.target.value }))} />
+                    </div>
+                  </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    <label className="text-sm font-medium text-gray-700">Email <span className="text-red-500">*</span></label>
                     <input type="email" className={inputClass} value={userForm.email}
                       onChange={(e) => setUserForm((f) => ({ ...f, email: e.target.value }))} />
                   </div>
@@ -374,26 +390,12 @@ export default function SettingsPage() {
                 </>
               )}
               {userModal.mode === "create" && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">First Name</label>
-                      <input className={inputClass} value={userForm.firstName}
-                        onChange={(e) => setUserForm((f) => ({ ...f, firstName: e.target.value }))} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">Last Name</label>
-                      <input className={inputClass} value={userForm.lastName}
-                        onChange={(e) => setUserForm((f) => ({ ...f, lastName: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" className={inputClass} value={userForm.password}
-                      onChange={(e) => setUserForm((f) => ({ ...f, password: e.target.value }))}
-                      placeholder="Min. 8 characters" />
-                  </div>
-                </>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Password <span className="text-red-500">*</span></label>
+                  <input type="password" className={inputClass} value={userForm.password}
+                    onChange={(e) => setUserForm((f) => ({ ...f, password: e.target.value }))}
+                    placeholder="Min. 8 characters" />
+                </div>
               )}
               {userModal.mode === "password" && (
                 <div className="space-y-1">

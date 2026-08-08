@@ -24,7 +24,7 @@ async function apiRequest(url: string, method: string, body: any) {
 }
 
 const EMPTY = {
-  firstName: "", lastName: "", company: "", phone: "",
+  firstName: "", lastName: "", company: "", phone: "", contactEmail: "",
   addressLine1: "", addressLine2: "", city: "", state: "", zip: "",
   entryInstructions: "", gateCode: "", petNotes: "", specialNotes: "",
 };
@@ -119,11 +119,20 @@ export function ClientModal({ open, onClose, client }: ClientModalProps) {
                 className={inputClass}
               />
             </FormField>
-            <FormField label="Phone" className="col-span-2">
+            <FormField label="Phone">
               <input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
                 placeholder="555-0200"
+                className={inputClass}
+              />
+            </FormField>
+            <FormField label="Email">
+              <input
+                type="email"
+                value={form.contactEmail}
+                onChange={(e) => set("contactEmail", e.target.value)}
+                placeholder="client@example.com"
                 className={inputClass}
               />
             </FormField>

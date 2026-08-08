@@ -41,7 +41,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "An active invoice already exists for this job" }, { status: 409 });
     }
 
-    const amount = flatRate ?? Number(job.flatRate ?? 0);
+    const baseAmount = flatRate ?? Number(job.flatRate ?? 0);
+    const jobExtraItems: { description: string; unitPrice: number }[] = Array.isArray(job.extraItems) ? job.extraItems as any[] : [];
+    const extrasTotal = jobExtraItems.reduce((s, i) => s + i.unitPrice, 0);
+    const amount = baseAmount + extrasTotal;
+
     if (amount <= 0) {
       return NextResponse.json({ error: "Amount must be greater than 0. Set a flat rate on the job or provide one here." }, { status: 400 });
     }
@@ -50,13 +54,17 @@ export async function POST(req: NextRequest) {
     const taxAmount = 0;
     const total = amount;
 
+    const lineItems = [
+      { description: job.title, qty: 1, unitPrice: baseAmount, total: baseAmount },
+      ...jobExtraItems.map((item) => ({ description: item.description, qty: 1, unitPrice: item.unitPrice, total: item.unitPrice })),
+    ];
+
     const invoiceNumber = generateInvoiceNumber();
 
     const due = dueDate ? new Date(dueDate) : new Date(Date.now() + 14 * 86400 * 1000);
 
     let invoice;
     if (job.invoice) {
-      // Update existing DRAFT
       invoice = await prisma.invoice.update({
         where: { id: job.invoice.id },
         data: {
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest) {
           total,
           issuedAt: new Date(),
           dueAt: due,
-          lineItems: [{ description: job.title, qty: 1, unitPrice: amount, total: amount }],
+          lineItems,
         },
       });
     } else {
@@ -83,7 +91,7 @@ export async function POST(req: NextRequest) {
           total,
           issuedAt: new Date(),
           dueAt: due,
-          lineItems: [{ description: job.title, qty: 1, unitPrice: amount, total: amount }],
+          lineItems,
         },
       });
     }

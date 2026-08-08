@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { createHmac, timingSafeEqual } from "crypto";
 
-// Next.js App Router: disable body parsing so we get the raw text for signature verification
 export const runtime = "nodejs";
+
+function verifyStripeSignature(payload: string, sigHeader: string, secret: string): boolean {
+  const parts = sigHeader.split(",").reduce<Record<string, string>>((acc, part) => {
+    const [k, v] = part.split("=");
+    acc[k] = v;
+    return acc;
+  }, {});
+
+  const timestamp = parts["t"];
+  const signatures = sigHeader.split(",").filter((p) => p.startsWith("v1=")).map((p) => p.slice(3));
+
+  if (!timestamp || signatures.length === 0) return false;
+
+  const signedPayload = `${timestamp}.${payload}`;
+  const expected = createHmac("sha256", secret).update(signedPayload, "utf8").digest("hex");
+
+  return signatures.some((sig) => {
+    try {
+      return timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"));
+    } catch {
+      return false;
+    }
+  });
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -11,16 +34,23 @@ export async function POST(req: NextRequest) {
 
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
-  let event;
-  try {
-    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
-  } catch (err: any) {
-    console.error("[Stripe webhook] signature verification failed:", err.message);
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+
+  if (!verifyStripeSignature(body, sig, webhookSecret)) {
+    console.error("[Stripe webhook] signature verification failed");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  let event: any;
+  try {
+    event = JSON.parse(body);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
+    const session = event.data.object;
     const invoiceId = session.metadata?.invoiceId;
 
     if (!invoiceId) {

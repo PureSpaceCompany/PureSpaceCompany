@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ClientModal } from "@/components/modals/client-modal";
 import { PropertyModal } from "@/components/modals/property-modal";
 import { clientDisplayName } from "@/lib/utils";
-import { Search, Plus, MapPin, Phone, Loader2, Briefcase, Pencil, Trash2, Building2, ChevronDown, ChevronRight, Home } from "lucide-react";
+import { Search, Plus, MapPin, Phone, Mail, Loader2, Briefcase, Pencil, Trash2, Building2, ChevronDown, ChevronRight, Home } from "lucide-react";
 
 async function fetchClients(search: string) {
   const params = new URLSearchParams();
@@ -182,6 +182,9 @@ export default function ClientsPage() {
               <div className="mt-4 space-y-1.5 text-sm text-gray-600">
                 <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" /><span className="truncate">{client.addressLine1}, {client.city}</span></div>
                 {client.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" /><span>{client.phone}</span></div>}
+                {(client.contactEmail || client.user?.email) && (
+                  <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" /><span className="truncate">{client.contactEmail || client.user?.email}</span></div>
+                )}
                 {client._count && (
                   <div className="flex items-center gap-2"><Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" /><span>{client._count.jobs} job{client._count.jobs !== 1 ? "s" : ""}</span></div>
                 )}

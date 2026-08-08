@@ -9,6 +9,7 @@ const createClientSchema = z.object({
   lastName: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  contactEmail: z.string().email().optional().nullable(),
   addressLine1: z.string().min(1),
   addressLine2: z.string().optional().nullable(),
   city: z.string().min(1),

@@ -229,7 +229,12 @@ export default function JobsPage() {
                       ) : <span className="text-gray-400 italic">Unassigned</span>}
                     </td>
                     <td className="hidden md:table-cell px-3 md:px-6 py-3 text-gray-700">
-                      {job.flatRate ? formatCurrency(job.flatRate) : <span className="text-gray-400">—</span>}
+                      {(() => {
+                        const base = Number(job.flatRate ?? 0);
+                        const extras = Array.isArray(job.extraItems) ? (job.extraItems as any[]).reduce((s: number, i: any) => s + i.unitPrice, 0) : 0;
+                        const total = base + extras;
+                        return total > 0 ? formatCurrency(total) : <span className="text-gray-400">—</span>;
+                      })()}
                     </td>
                     <td className="px-3 md:px-6 py-3"><JobStatusBadge status={job.status as JobStatus} /></td>
                     <td className="px-3 md:px-6 py-3">
@@ -262,7 +267,7 @@ export default function JobsPage() {
         )}
       </Card>
 
-      <JobModal open={modalOpen} onClose={() => { setModalOpen(false); setEditJob(null); }} job={editJob} />
+      <JobModal open={modalOpen} onClose={() => { setModalOpen(false); setEditJob(null); }} job={editJob} defaultDate={editJob ? undefined : dateFilter} />
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">

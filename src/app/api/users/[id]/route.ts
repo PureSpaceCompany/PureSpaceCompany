@@ -9,6 +9,8 @@ const updateSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "CLEANER", "CLIENT"]).optional(),
   password: z.string().min(8).optional(),
   email: z.string().email().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -24,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { role, password, email } = parsed.data;
+    const { role, password, email, firstName, lastName } = parsed.data;
     const data: any = {};
     if (role) data.role = role;
     if (email) data.email = email;
@@ -33,8 +35,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const user = await prisma.user.update({
       where: { id: params.id },
       data,
-      select: { id: true, email: true, role: true },
+      select: { id: true, email: true, role: true, staffProfile: true, clientProfile: true },
     });
+
+    // Update name on linked profile if provided
+    if (firstName !== undefined || lastName !== undefined) {
+      const nameData: any = {};
+      if (firstName !== undefined) nameData.firstName = firstName;
+      if (lastName !== undefined) nameData.lastName = lastName;
+      if (user.staffProfile) {
+        await prisma.staffProfile.update({ where: { userId: params.id }, data: nameData });
+      } else if (user.clientProfile) {
+        await prisma.clientProfile.update({ where: { userId: params.id }, data: nameData });
+      } else {
+        // ADMIN users have no profile — create a staffProfile to store the name
+        await prisma.staffProfile.create({
+          data: { userId: params.id, firstName: firstName ?? "", lastName: lastName ?? "", isActive: true, hourlyRate: 0 },
+        });
+      }
+    }
 
     return NextResponse.json({ data: user });
   } catch (err: any) {

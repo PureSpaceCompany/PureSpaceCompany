@@ -14,8 +14,127 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { useSession } from "next-auth/react";
-import { MapPin, Clock, User, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Clock, User, AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { JobStatus } from "@/types";
+import { useState, useEffect } from "react";
+
+interface ExtraItem { description: string; unitPrice: number; }
+
+function ExtraChargesCard({ job, onSave, saving }: { job: any; onSave: (items: ExtraItem[]) => void; saving: boolean }) {
+  const [items, setItems] = useState<ExtraItem[]>([]);
+  const [desc, setDesc] = useState("");
+  const [price, setPrice] = useState("");
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) {
+      setItems(Array.isArray(job.extraItems) ? (job.extraItems as any[]) : []);
+    }
+  }, [job.extraItems]);
+
+  function addItem() {
+    const p = parseFloat(price);
+    if (!desc.trim() || isNaN(p) || p <= 0) return;
+    const next = [...items, { description: desc.trim(), unitPrice: p }];
+    setItems(next);
+    setDesc("");
+    setPrice("");
+    setDirty(true);
+  }
+
+  function removeItem(i: number) {
+    const next = items.filter((_, idx) => idx !== i);
+    setItems(next);
+    setDirty(true);
+  }
+
+  function save() {
+    onSave(items);
+    setDirty(false);
+  }
+
+  const flatRate = Number(job.flatRate ?? 0);
+  const extrasTotal = items.reduce((s, i) => s + i.unitPrice, 0);
+  const total = flatRate + extrasTotal;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Charges</CardTitle>
+          {dirty && (
+            <Button size="sm" onClick={save} loading={saving}>Save</Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Existing items */}
+        <div className="space-y-2">
+          {flatRate > 0 && (
+            <div className="flex justify-between text-sm py-1.5 border-b border-gray-50">
+              <span className="text-gray-700">{job.title}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(flatRate)}</span>
+            </div>
+          )}
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 group">
+              <span className="text-gray-700">{item.description}</span>
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-gray-900">{formatCurrency(item.unitPrice)}</span>
+                <button onClick={() => removeItem(i)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+          {flatRate === 0 && items.length === 0 && (
+            <p className="text-sm text-gray-400 italic">No charges added yet.</p>
+          )}
+        </div>
+
+        {/* Add new item */}
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-xs text-gray-500 mb-1 block">Description</label>
+            <input
+              type="text"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addItem()}
+              placeholder="e.g. Mattress cleaning"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#163A70]/30 focus:border-[#163A70]"
+            />
+          </div>
+          <div className="w-28">
+            <label className="text-xs text-gray-500 mb-1 block">Price ($)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addItem()}
+              placeholder="0.00"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#163A70]/30 focus:border-[#163A70]"
+            />
+          </div>
+          <Button size="sm" variant="outline" onClick={addItem} disabled={!desc.trim() || !price}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Totals */}
+        {(flatRate > 0 || items.length > 0) && (
+          <div className="border-t border-gray-100 pt-3 text-sm">
+            <div className="flex justify-between font-bold text-gray-900 text-base pt-1">
+              <span>Total</span><span>{formatCurrency(total)}</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 interface JobDetailPageProps {
   params: { id: string };
@@ -171,19 +290,9 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
         </CardContent>
       </Card>
 
-      {/* Billing summary (hidden from cleaners) */}
-      {!isCleanerView && job.flatRate && (
-        <Card>
-          <CardHeader><CardTitle>Billing</CardTitle></CardHeader>
-          <CardContent>
-            <dl className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-gray-500">Flat rate</dt>
-                <dd className="font-medium">{formatCurrency(job.flatRate)}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+      {/* Charges – shown to admins and managers only */}
+      {role !== "CLEANER" && (
+        <ExtraChargesCard job={job} onSave={(items) => updateJob.mutate({ id: job.id, extraItems: items } as any)} saving={updateJob.isPending} />
       )}
     </div>
   );

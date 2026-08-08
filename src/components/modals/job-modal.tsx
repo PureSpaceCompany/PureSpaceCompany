@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FormField, inputClass, selectClass } from "@/components/ui/form-field";
 import { useCreateJob, useUpdateJob } from "@/lib/hooks/use-jobs";
 import { Job } from "@/types";
-import { clientDisplayName } from "@/lib/utils";
+import { clientDisplayName, formatCurrency } from "@/lib/utils";
+import { Plus, Trash2, AlertTriangle } from "lucide-react";
 
 // Build time options: every hour on :00 and :30, formatted 12-hour
 const TIME_OPTIONS: { value: string; label: string }[] = [];
@@ -25,7 +26,6 @@ function splitDatetime(dt: string): { date: string; time: string } {
   if (!dt) return { date: "", time: "11:00" };
   const [date, time] = dt.split("T");
   const [h, m] = time.split(":");
-  // snap to nearest :00 or :30
   const snapped = Number(m) < 15 ? "00" : Number(m) < 45 ? "30" : "00";
   const hh = snapped === "00" && Number(m) >= 45
     ? String((Number(h) + 1) % 24).padStart(2, "0")
@@ -33,46 +33,12 @@ function splitDatetime(dt: string): { date: string; time: string } {
   return { date, time: `${hh}:${snapped}` };
 }
 
-function joinDatetime(date: string, time: string): string {
-  if (!date || !time) return "";
-  return `${date}T${time}`;
-}
-
-function DateTimePicker({
-  value,
-  onChange,
-  className,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  className?: string;
-}) {
-  const { date, time } = splitDatetime(value);
-  return (
-    <div className="flex gap-2">
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => onChange(joinDatetime(e.target.value, time || "11:00"))}
-        className={`${inputClass} flex-1`}
-      />
-      <select
-        value={time || "11:00"}
-        onChange={(e) => onChange(joinDatetime(date, e.target.value))}
-        className={`${selectClass} w-32`}
-      >
-        {TIME_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
 
 interface JobModalProps {
   open: boolean;
   onClose: () => void;
   job?: Job | null;
+  defaultDate?: string;
 }
 
 const SERVICE_TYPES = ["STANDARD", "DEEP_CLEAN", "MOVE_IN_OUT", "POST_CONSTRUCTION", "RECURRING", "COMMERCIAL"];
@@ -101,7 +67,7 @@ function toLocalDatetime(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function JobModal({ open, onClose, job }: JobModalProps) {
+export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
   const isEdit = !!job;
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
@@ -115,8 +81,9 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
     title: "",
     serviceType: "STANDARD",
     recurrence: "ONCE",
-    scheduledStart: "",
-    scheduledEnd: "",
+    scheduledDate: "",
+    startTime: "11:00",
+    endTime: "13:00",
     flatRate: "",
     cleanerPay: "",
     notes: "",
@@ -125,6 +92,9 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [titleTouched, setTitleTouched] = useState(false);
+  const [extraItems, setExtraItems] = useState<{ description: string; unitPrice: number }[]>([]);
+  const [extraDesc, setExtraDesc] = useState("");
+  const [extraPrice, setExtraPrice] = useState("");
 
   const { data: properties = [] } = useQuery({
     queryKey: ["properties", form.clientId],
@@ -132,34 +102,61 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
     enabled: open && !!form.clientId,
   });
 
+  const selectedDate = form.scheduledDate;
+
+  const { data: dayJobs = [] } = useQuery({
+    queryKey: ["jobs-day", selectedDate],
+    queryFn: async () => {
+      const from = encodeURIComponent(`${selectedDate}T00:00:00`);
+      const to = encodeURIComponent(`${selectedDate}T23:59:59`);
+      const res = await fetch(`/api/jobs?from=${from}&to=${to}`);
+      return ((await res.json()).data as any[]) ?? [];
+    },
+    enabled: open && !isEdit && !!selectedDate && !!form.propertyId,
+    staleTime: 30_000,
+  });
+
+  const conflictingJob: any = !isEdit && form.propertyId && selectedDate
+    ? dayJobs.find(
+        (j: any) =>
+          j.propertyId === form.propertyId &&
+          j.status !== "CANCELLED"
+      )
+    : null;
+
   useEffect(() => {
     if (job) {
+      const { date: sDate, time: sTime } = splitDatetime(toLocalDatetime(job.scheduledStart));
+      const { time: eTime } = splitDatetime(toLocalDatetime(job.scheduledEnd));
       setForm({
         clientId: (job as any).client?.id ?? (job as any).clientId ?? "",
         propertyId: (job as any).propertyId ?? "",
         title: job.title,
         serviceType: job.serviceType,
         recurrence: job.recurrence ?? "ONCE",
-        scheduledStart: toLocalDatetime(job.scheduledStart),
-        scheduledEnd: toLocalDatetime(job.scheduledEnd),
+        scheduledDate: sDate,
+        startTime: sTime || "11:00",
+        endTime: eTime || "13:00",
         flatRate: job.flatRate ? String(job.flatRate) : "",
         cleanerPay: (job as any).cleanerPay ? String((job as any).cleanerPay) : "",
         notes: job.notes ?? "",
         staffIds: job.assignments?.map((a) => a.staffId) ?? [],
         checklistItems: job.checklist?.map((i) => i.label).join("\n") ?? "",
       });
-      setTitleTouched(true); // editing an existing job — never overwrite its title
+      setTitleTouched(true);
     } else {
-      // Default start: today at 11:00 AM, end at 12:00 PM
       const today = new Date();
       const pad = (n: number) => String(n).padStart(2, "0");
       const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
       setForm({ clientId: "", propertyId: "", title: "", serviceType: "STANDARD", recurrence: "ONCE",
-        scheduledStart: `${todayStr}T11:00`, scheduledEnd: `${todayStr}T12:00`,
+        scheduledDate: defaultDate || todayStr, startTime: "11:00", endTime: "13:00",
         flatRate: "", cleanerPay: "", notes: "", staffIds: [], checklistItems: "" });
       setTitleTouched(false);
     }
     setErrors({});
+    setExtraItems(Array.isArray((job as any)?.extraItems) ? (job as any).extraItems : []);
+    setExtraDesc("");
+    setExtraPrice("");
   }, [job, open]);
 
   function set(key: string, value: any) {
@@ -168,21 +165,15 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
       const next = { ...f, [key]: value };
       if (key === "clientId") {
         next.propertyId = "";
-        if (!titleTouched) {
-          const client = clients.find((c: any) => c.id === value);
-          next.title = client?.addressLine1 ?? "";
-        }
+        if (!titleTouched) next.title = "";
       }
       if (key === "propertyId") {
         if (value) {
           const prop = properties.find((p: any) => p.id === value);
-          if (!titleTouched) next.title = prop?.addressLine1 ?? f.title;
+          if (!titleTouched) next.title = prop?.name ?? f.title;
           if (prop?.cleaningFee != null) next.flatRate = String(prop.cleaningFee);
         } else {
-          if (!titleTouched) {
-            const client = clients.find((c: any) => c.id === f.clientId);
-            next.title = client?.addressLine1 ?? "";
-          }
+          if (!titleTouched) next.title = "";
           next.flatRate = "";
         }
       }
@@ -202,10 +193,8 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
     const e: Record<string, string> = {};
     if (!form.clientId) e.clientId = "Client is required";
     if (!form.title.trim()) e.title = "Title is required";
-    if (!form.scheduledStart) e.scheduledStart = "Start time is required";
-    if (!form.scheduledEnd) e.scheduledEnd = "End time is required";
-    if (form.scheduledStart && form.scheduledEnd && form.scheduledStart >= form.scheduledEnd)
-      e.scheduledEnd = "End must be after start";
+    if (!form.scheduledDate) e.scheduledDate = "Date is required";
+    if (form.startTime >= form.endTime) e.endTime = "End time must be after start";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -220,10 +209,11 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
       title: form.title,
       serviceType: form.serviceType,
       recurrence: form.recurrence,
-      scheduledStart: new Date(form.scheduledStart).toISOString(),
-      scheduledEnd: new Date(form.scheduledEnd).toISOString(),
+      scheduledStart: new Date(`${form.scheduledDate}T${form.startTime}`).toISOString(),
+      scheduledEnd: new Date(`${form.scheduledDate}T${form.endTime}`).toISOString(),
       notes: form.notes || undefined,
       flatRate: form.flatRate ? parseFloat(form.flatRate) : undefined,
+      extraItems,
       cleanerPay: form.cleanerPay ? parseFloat(form.cleanerPay) : null,
       staffIds: form.staffIds,
       checklistItems: form.checklistItems
@@ -268,12 +258,25 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             </FormField>
           )}
 
+          {conflictingJob && (
+            <div className="sm:col-span-2 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+              <div>
+                <span className="font-semibold">Duplicate job detected — </span>
+                <span>
+                  {properties.find((p: any) => p.id === form.propertyId)?.name ?? "This property"} already has a job scheduled on this day
+                  {conflictingJob.title ? ` ("${conflictingJob.title}")` : ""}.
+                </span>
+              </div>
+            </div>
+          )}
+
           <FormField
             label="Job Title"
             required
             error={errors.title}
             className="sm:col-span-2"
-            description={!titleTouched && form.title ? "Auto-filled from address — edit to override" : undefined}
+            description={!titleTouched && form.title ? "Auto-filled from property name — edit to override" : undefined}
           >
             <input
               value={form.title}
@@ -295,12 +298,35 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             </select>
           </FormField>
 
-          <FormField label="Scheduled Start" required error={errors.scheduledStart} className="sm:col-span-2">
-            <DateTimePicker value={form.scheduledStart} onChange={(v) => set("scheduledStart", v)} />
-          </FormField>
-
-          <FormField label="Scheduled End" required error={errors.scheduledEnd} className="sm:col-span-2">
-            <DateTimePicker value={form.scheduledEnd} onChange={(v) => set("scheduledEnd", v)} />
+          <FormField label="Date" required error={errors.scheduledDate} className="sm:col-span-2">
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={form.scheduledDate}
+                onChange={(e) => set("scheduledDate", e.target.value)}
+                className={`${inputClass} flex-1`}
+              />
+              <select
+                value={form.startTime}
+                onChange={(e) => set("startTime", e.target.value)}
+                className={`${selectClass} w-32`}
+              >
+                {TIME_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <span className="flex items-center text-gray-400 text-sm">–</span>
+              <select
+                value={form.endTime}
+                onChange={(e) => set("endTime", e.target.value)}
+                className={`${selectClass} w-32`}
+              >
+                {TIME_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            {errors.endTime && <p className="text-xs text-red-500 mt-1">{errors.endTime}</p>}
           </FormField>
 
           <FormField label="Client Charge ($)" error={errors.flatRate}
@@ -313,6 +339,44 @@ export function JobModal({ open, onClose, job }: JobModalProps) {
             <input type="number" min="0" step="0.01" value={form.cleanerPay}
               onChange={(e) => set("cleanerPay", e.target.value)} placeholder="e.g. 80.00" className={inputClass} />
           </FormField>
+
+          {/* Extra charges */}
+          <div className="sm:col-span-2 space-y-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Extra Charges</p>
+            {extraItems.length > 0 && (
+              <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {extraItems.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-gray-700">{item.description}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-gray-900">{formatCurrency(item.unitPrice)}</span>
+                      <button type="button" onClick={() => setExtraItems(extraItems.filter((_, idx) => idx !== i))}
+                        className="text-red-400 hover:text-red-600">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <input type="text" value={extraDesc} onChange={(e) => setExtraDesc(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const p = parseFloat(extraPrice); if (extraDesc.trim() && !isNaN(p) && p > 0) { setExtraItems([...extraItems, { description: extraDesc.trim(), unitPrice: p }]); setExtraDesc(""); setExtraPrice(""); } } }}
+                  placeholder="Description (e.g. Mattress)" className={inputClass} />
+              </div>
+              <div className="w-28">
+                <input type="number" min="0" step="0.01" value={extraPrice} onChange={(e) => setExtraPrice(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const p = parseFloat(extraPrice); if (extraDesc.trim() && !isNaN(p) && p > 0) { setExtraItems([...extraItems, { description: extraDesc.trim(), unitPrice: p }]); setExtraDesc(""); setExtraPrice(""); } } }}
+                  placeholder="Price ($)" className={inputClass} />
+              </div>
+              <Button type="button" size="sm" variant="outline"
+                onClick={() => { const p = parseFloat(extraPrice); if (extraDesc.trim() && !isNaN(p) && p > 0) { setExtraItems([...extraItems, { description: extraDesc.trim(), unitPrice: p }]); setExtraDesc(""); setExtraPrice(""); } }}
+                disabled={!extraDesc.trim() || !extraPrice}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
 
           <FormField label="Notes" className="sm:col-span-2">
             <input value={form.notes} onChange={(e) => set("notes", e.target.value)}

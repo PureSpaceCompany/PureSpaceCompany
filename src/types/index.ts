@@ -79,6 +79,7 @@ export interface Job {
   actualEnd?: string | null;
   notes?: string | null;
   flatRate?: number | null;
+  extraItems?: { description: string; unitPrice: number }[];
   clientId?: string;
   propertyId?: string | null;
   client: ClientProfile;
