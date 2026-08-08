@@ -140,7 +140,7 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
         notes: job.notes ?? "",
         staffAssignments: job.assignments?.map((a) => ({
           id: a.staffId,
-          pay: (job as any).cleanerPay ? String((job as any).cleanerPay) : "",
+          pay: (a as any).pay != null ? String((a as any).pay) : "",
         })) ?? [],
         checklistItems: job.checklist?.map((i) => i.label).join("\n") ?? "",
       });
@@ -230,7 +230,10 @@ export function JobModal({ open, onClose, job, defaultDate }: JobModalProps) {
       cleanerPay: form.staffAssignments.length > 0
         ? form.staffAssignments.reduce((s, a) => s + (parseFloat(a.pay) || 0), 0) || null
         : null,
-      staffIds: form.staffAssignments.map((a) => a.id),
+      staffAssignments: form.staffAssignments.map((a) => ({
+        id: a.id,
+        pay: parseFloat(a.pay) || null,
+      })),
       checklistItems: form.checklistItems
         ? form.checklistItems.split("\n").map((l) => l.trim()).filter(Boolean)
         : undefined,

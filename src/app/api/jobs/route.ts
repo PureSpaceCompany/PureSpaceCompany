@@ -19,6 +19,7 @@ const createJobSchema = z.object({
   templateId: z.string().optional(),
   checklistItems: z.array(z.string()).optional(),
   staffIds: z.array(z.string()).optional(),
+  staffAssignments: z.array(z.object({ id: z.string(), pay: z.number().nonnegative().optional().nullable() })).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -85,7 +86,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { clientId, propertyId, title, serviceType, recurrence, scheduledStart, scheduledEnd,
-      notes, flatRate, cleanerPay, templateId, checklistItems, staffIds } = parsed.data;
+      notes, flatRate, cleanerPay, templateId, checklistItems, staffIds, staffAssignments } = parsed.data;
+
+    // Resolve final assignment list: staffAssignments wins over legacy staffIds
+    const resolvedAssignments = staffAssignments?.length
+      ? staffAssignments
+      : (staffIds ?? []).map((id) => ({ id, pay: null as number | null | undefined }));
 
     let items: { label: string; sortOrder: number }[] = [];
     if (templateId) {
@@ -107,9 +113,9 @@ export async function POST(req: NextRequest) {
         notes,
         flatRate,
         cleanerPay: cleanerPay ?? null,
-        status: staffIds?.length ? "ASSIGNED" : "UNASSIGNED",
-        assignments: staffIds?.length
-          ? { create: staffIds.map((sid, i) => ({ staffId: sid, isLead: i === 0 })) }
+        status: resolvedAssignments.length ? "ASSIGNED" : "UNASSIGNED",
+        assignments: resolvedAssignments.length
+          ? { create: resolvedAssignments.map((a, i) => ({ staffId: a.id, isLead: i === 0, pay: a.pay ?? null })) }
           : undefined,
         checklist: items.length ? { create: items } : undefined,
       },

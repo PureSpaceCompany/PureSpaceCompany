@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
-// GET /api/staff/:id/payments — list completed jobs with pay info
+// GET /api/staff/:id/payments — list completed jobs with this staff's individual pay
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -12,22 +12,37 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const jobs = await prisma.job.findMany({
+    // Fetch assignments for this staff on completed jobs, including the per-assignment pay
+    const assignments = await prisma.jobAssignment.findMany({
       where: {
-        assignments: { some: { staffId: params.id } },
-        status: "COMPLETED",
+        staffId: params.id,
+        job: { status: "COMPLETED" },
       },
       select: {
-        id: true,
-        title: true,
-        scheduledStart: true,
-        cleanerPay: true,
-        cleanerPaidAt: true,
-        client: { select: { firstName: true, lastName: true, company: true } },
-        property: { select: { name: true, city: true } },
+        pay: true,
+        job: {
+          select: {
+            id: true,
+            title: true,
+            scheduledStart: true,
+            cleanerPaidAt: true,
+            client: { select: { firstName: true, lastName: true, company: true } },
+            property: { select: { name: true, city: true } },
+          },
+        },
       },
-      orderBy: { scheduledStart: "desc" },
+      orderBy: { job: { scheduledStart: "desc" } },
     });
+
+    const jobs = assignments.map((a) => ({
+      id: a.job.id,
+      title: a.job.title,
+      scheduledStart: a.job.scheduledStart,
+      cleanerPay: a.pay !== null ? Number(a.pay) : null,
+      cleanerPaidAt: a.job.cleanerPaidAt,
+      client: a.job.client,
+      property: a.job.property,
+    }));
 
     const totalEarned = jobs.reduce((s, j) => s + Number(j.cleanerPay ?? 0), 0);
     const totalPaid   = jobs.filter((j) => j.cleanerPaidAt).reduce((s, j) => s + Number(j.cleanerPay ?? 0), 0);
@@ -40,7 +55,6 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 // POST /api/staff/:id/payments — mark jobs as paid
-// body: { jobIds: string[] }
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -68,8 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-// DELETE /api/staff/:id/payments — mark jobs as unpaid (revert)
-// body: { jobIds: string[] }
+// DELETE /api/staff/:id/payments — mark jobs as unpaid
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);

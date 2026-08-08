@@ -16,6 +16,7 @@ const updateJobSchema = z.object({
   extraItems: z.array(z.object({ description: z.string(), unitPrice: z.number() })).optional(),
   cleanerPay: z.number().min(0).optional().nullable(),
   staffIds: z.array(z.string()).optional(),
+  staffAssignments: z.array(z.object({ id: z.string(), pay: z.number().nonnegative().optional().nullable() })).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -79,18 +80,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
-    const { staffIds, ...rest } = parsed.data;
+    const { staffIds, staffAssignments, ...rest } = parsed.data;
     const updateData: any = { ...rest };
 
-    if (staffIds !== undefined) {
+    // staffAssignments wins over legacy staffIds
+    const resolvedAssignments = staffAssignments?.length
+      ? staffAssignments
+      : staffIds !== undefined
+        ? staffIds.map((id) => ({ id, pay: null as number | null | undefined }))
+        : undefined;
+
+    if (resolvedAssignments !== undefined) {
       await prisma.jobAssignment.deleteMany({ where: { jobId: params.id } });
-      // Only update status for staff changes if the job hasn't already reached a terminal state
       if (!["COMPLETED", "CANCELLED", "NO_SHOW"].includes(existing.status)) {
-        updateData.status = staffIds.length ? "ASSIGNED" : "UNASSIGNED";
+        updateData.status = resolvedAssignments.length ? "ASSIGNED" : "UNASSIGNED";
       }
-      if (staffIds.length) {
+      if (resolvedAssignments.length) {
         await prisma.jobAssignment.createMany({
-          data: staffIds.map((sid, i) => ({ jobId: params.id, staffId: sid, isLead: i === 0 })),
+          data: resolvedAssignments.map((a, i) => ({ jobId: params.id, staffId: a.id, isLead: i === 0, pay: a.pay ?? null })),
         });
       }
     }

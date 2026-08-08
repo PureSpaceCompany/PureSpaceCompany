@@ -13,46 +13,51 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const jobs = await prisma.job.findMany({
+    // Query assignments with their individual pay (not the job-level cleanerPay sum)
+    const assignments = await prisma.jobAssignment.findMany({
       where: {
-        status: "COMPLETED",
-        cleanerPay: { not: null },
+        job: { status: "COMPLETED" },
+        pay: { not: null },
       },
       select: {
-        scheduledStart: true,
-        cleanerPay: true,
-        cleanerPaidAt: true,
-        assignments: { select: { staff: { select: { id: true, firstName: true, lastName: true } } } },
+        pay: true,
+        staffId: true,
+        staff: { select: { firstName: true, lastName: true } },
+        job: {
+          select: {
+            scheduledStart: true,
+            cleanerPaidAt: true,
+          },
+        },
       },
-      orderBy: { scheduledStart: "asc" },
+      orderBy: { job: { scheduledStart: "asc" } },
     });
 
     // Group by YYYY-MM
     const monthMap = new Map<string, { label: string; jobs: number; paid: number; owed: number }>();
 
-    for (const job of jobs) {
-      const d = new Date(job.scheduledStart);
+    for (const a of assignments) {
+      const d = new Date(a.job.scheduledStart);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
       if (!monthMap.has(key)) monthMap.set(key, { label, jobs: 0, paid: 0, owed: 0 });
       const m = monthMap.get(key)!;
-      const pay = Number(job.cleanerPay ?? 0);
+      const pay = Number(a.pay ?? 0);
       m.jobs++;
-      if (job.cleanerPaidAt) m.paid += pay;
+      if (a.job.cleanerPaidAt) m.paid += pay;
       else m.owed += pay;
     }
 
     // Per-staff owed totals for the card badges
     const staffMap = new Map<string, { name: string; owed: number; paid: number }>();
-    for (const job of jobs) {
-      const pay = Number(job.cleanerPay ?? 0);
-      for (const a of job.assignments) {
-        const s = a.staff;
-        if (!staffMap.has(s.id)) staffMap.set(s.id, { name: `${s.firstName} ${s.lastName}`, owed: 0, paid: 0 });
-        const entry = staffMap.get(s.id)!;
-        if (job.cleanerPaidAt) entry.paid += pay;
-        else entry.owed += pay;
+    for (const a of assignments) {
+      const pay = Number(a.pay ?? 0);
+      if (!staffMap.has(a.staffId)) {
+        staffMap.set(a.staffId, { name: `${a.staff.firstName} ${a.staff.lastName}`, owed: 0, paid: 0 });
       }
+      const entry = staffMap.get(a.staffId)!;
+      if (a.job.cleanerPaidAt) entry.paid += pay;
+      else entry.owed += pay;
     }
 
     const months = Array.from(monthMap.entries())

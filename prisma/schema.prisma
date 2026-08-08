@@ -223,6 +223,7 @@ model JobAssignment {
   staffId      String
   staff        StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
   isLead       Boolean      @default(false)
+  pay          Decimal?     @db.Decimal(10, 2)
   assignedAt   DateTime     @default(now())
 
   @@unique([jobId, staffId])
