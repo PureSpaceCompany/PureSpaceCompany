@@ -4,7 +4,8 @@
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
-  body { @apply text-gray-900 antialiased; }
+  body { @apply text-warm-900 antialiased; }
+  h1, h2, h3 { @apply font-serif; }
 }
 
 /* FullCalendar tweaks */

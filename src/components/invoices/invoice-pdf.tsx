@@ -52,7 +52,7 @@ interface InvoicePDFProps {
   companyPhone?: string;
 }
 
-export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAddress = "", companyPhone = "" }: InvoicePDFProps) {
+export function InvoicePDFButton({ invoice, companyName = "Pure Space Company", companyAddress = "", companyPhone = "" }: InvoicePDFProps) {
   const download = useCallback(async () => {
     const { jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
@@ -62,22 +62,22 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
     const margin = 18;
 
     // ── Brand header bar ────────────────────────────────────────────────────
-    doc.setFillColor(22, 58, 112); // navy #163A70
+    doc.setFillColor(26, 61, 43); // forest green #1A3D2B
     doc.rect(0, 0, pageW, 18, "F");
 
-    // Wordmark: "Stay" (white) + "Shine" (gold)
+    // Wordmark: "Pure" (white) + "Space" (mint)
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text("Stay", margin, 11.5);
-    const stayW = doc.getTextWidth("Stay");
-    doc.setTextColor(200, 164, 106);
-    doc.text("Shine", margin + stayW, 11.5);
+    doc.text("Pure", margin, 11.5);
+    const pureW = doc.getTextWidth("Pure");
+    doc.setTextColor(76, 175, 130);
+    doc.text("Space", margin + pureW, 11.5);
 
     // INVOICE label right-aligned in header
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 164, 106);
+    doc.setTextColor(76, 175, 130);
     doc.text("INVOICE", pageW - margin, 11, { align: "right" });
 
     // ── Invoice meta (right side) ────────────────────────────────────────────
@@ -85,7 +85,7 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
 
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(22, 58, 112);
+    doc.setTextColor(26, 61, 43);
     doc.text(`#${invoice.invoiceNumber}`, pageW - margin, 30, { align: "right" });
 
     doc.setFontSize(9);
@@ -121,7 +121,7 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
     doc.text(invoice.status, margin + 12, leftY + 4.8, { align: "center" });
 
     // Divider
-    doc.setDrawColor(200, 164, 106); // gold divider
+    doc.setDrawColor(76, 175, 130); // mint divider
     doc.setLineWidth(0.7);
     doc.line(margin, 55, pageW - margin, 55);
     doc.setLineWidth(0.5);
@@ -187,7 +187,7 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
         formatCurrency(it.total),
       ]),
       headStyles: {
-        fillColor: [22, 58, 112], // navy
+        fillColor: [26, 61, 43], // forest green
         textColor: [255, 255, 255],
         fontStyle: "bold",
         fontSize: 9,
@@ -199,7 +199,7 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
         2: { cellWidth: 32, halign: "right" },
         3: { cellWidth: 32, halign: "right" },
       },
-      alternateRowStyles: { fillColor: [250, 248, 243] }, // cream
+      alternateRowStyles: { fillColor: [243, 250, 246] }, // light cream
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 6;
@@ -245,11 +245,11 @@ export function InvoicePDFButton({ invoice, companyName = "StayShine", companyAd
 
     // Footer bar
     const pageH = doc.internal.pageSize.getHeight();
-    doc.setFillColor(22, 58, 112);
+    doc.setFillColor(26, 61, 43);
     doc.rect(0, pageH - 14, pageW, 14, "F");
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 164, 106);
+    doc.setTextColor(76, 175, 130);
     doc.text("Thank you for your business!", pageW / 2, pageH - 6, { align: "center" });
 
     doc.save(`Invoice-${invoice.invoiceNumber}.pdf`);
@@ -282,7 +282,7 @@ interface StatementProps {
   companyName?: string;
 }
 
-export function ClientStatementPDFButton({ clientName, jobs, companyName = "StayShine" }: StatementProps) {
+export function ClientStatementPDFButton({ clientName, jobs, companyName = "Pure Space Company" }: StatementProps) {
   const download = useCallback(async () => {
     const { jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
@@ -292,27 +292,27 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
     const margin = 18;
 
     // ── Brand header bar ────────────────────────────────────────────────────
-    doc.setFillColor(22, 58, 112);
+    doc.setFillColor(26, 61, 43);
     doc.rect(0, 0, pageW, 18, "F");
 
-    // Wordmark: "Stay" (white) + "Shine" (gold)
+    // Wordmark: "Pure" (white) + "Space" (mint)
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text("Stay", margin, 11.5);
-    const stayWS = doc.getTextWidth("Stay");
-    doc.setTextColor(200, 164, 106);
-    doc.text("Shine", margin + stayWS, 11.5);
+    doc.text("Pure", margin, 11.5);
+    const pureWS = doc.getTextWidth("Pure");
+    doc.setTextColor(76, 175, 130);
+    doc.text("Space", margin + pureWS, 11.5);
 
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 164, 106);
+    doc.setTextColor(76, 175, 130);
     doc.text("STATEMENT", pageW - margin, 11, { align: "right" });
 
     // Client + date (right side)
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(22, 58, 112);
+    doc.setTextColor(26, 61, 43);
     doc.text(clientName, pageW - margin, 28, { align: "right" });
 
     doc.setFontSize(9);
@@ -326,7 +326,7 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
     doc.setTextColor(100, 116, 139);
     doc.text("ACCOUNT STATEMENT", margin, 28);
 
-    doc.setDrawColor(200, 164, 106);
+    doc.setDrawColor(76, 175, 130);
     doc.setLineWidth(0.7);
     doc.line(margin, 44, pageW - margin, 44);
     doc.setLineWidth(0.5);
@@ -363,7 +363,7 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
       head: [["Date", "Property", "Invoice #", "Status", "Total"]],
       body: rows,
       headStyles: {
-        fillColor: [22, 58, 112],
+        fillColor: [26, 61, 43],
         textColor: [255, 255, 255],
         fontStyle: "bold",
         fontSize: 8,
@@ -376,7 +376,7 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
         3: { cellWidth: 22, halign: "center" },
         4: { cellWidth: 26, halign: "right" },
       },
-      alternateRowStyles: { fillColor: [250, 248, 243] },
+      alternateRowStyles: { fillColor: [243, 250, 246] },
       // Suppress autoTable's own text for status cells so we can draw colored text once
       willDrawCell: (data) => {
         if (data.column.index === STATUS_COL && data.section === "body") {
@@ -414,11 +414,11 @@ export function ClientStatementPDFButton({ clientName, jobs, companyName = "Stay
     doc.text("Balance Due:", tx - 50, finalY + 8); doc.text(formatCurrency(unpaid), tx, finalY + 8, { align: "right" });
 
     const pageH2 = doc.internal.pageSize.getHeight();
-    doc.setFillColor(22, 58, 112);
+    doc.setFillColor(26, 61, 43);
     doc.rect(0, pageH2 - 14, pageW, 14, "F");
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 164, 106);
+    doc.setTextColor(76, 175, 130);
     doc.text("Thank you for your business!", pageW / 2, pageH2 - 6, { align: "center" });
 
     doc.save(`Statement-${clientName.replace(/\s+/g, "-")}.pdf`);

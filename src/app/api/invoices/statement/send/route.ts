@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     const appSettings = await prisma.appSettings.findUnique({ where: { id: "default" } });
-    const companyName = appSettings?.companyName ?? "StayShine";
+    const companyName = appSettings?.companyName ?? "Pure Space Company";
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) throw new Error("RESEND_API_KEY is not configured");

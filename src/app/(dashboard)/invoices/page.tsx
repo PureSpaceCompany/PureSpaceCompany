@@ -95,11 +95,11 @@ function InvoicePreviewModal({ invoice, job, onClose, onSend }: { invoice: any; 
       <div className="px-6 pb-6 space-y-5">
         <div className="flex items-start justify-between gap-4 pt-1 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A3D2B] to-[#4CAF82] flex items-center justify-center">
               <LogoMark size={22} className="brightness-0 invert" />
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-lg leading-tight">StayShine</p>
+              <p className="font-bold text-gray-900 text-lg leading-tight">Pure Space Company</p>
               <p className="text-xs text-gray-400">Professional Cleaning Services</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ function QuickGenerateModal({ job, onClose }: { job: any; onClose: () => void })
     <Modal open onClose={onClose} title="Generate Invoice">
       <div className="space-y-4 p-1">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
-        <div className="bg-[#FAF8F3] rounded-lg p-3 text-sm text-[#163A70] space-y-1">
+        <div className="bg-[#F3FAF6] rounded-lg p-3 text-sm text-[#1A3D2B] space-y-1">
           <p className="font-semibold">{job.title}</p>
           <p>{clientDisplayName(job.client)}</p>
           {job.property && <p>Property: {job.property.name}</p>}
@@ -253,7 +253,7 @@ function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => v
     amount,
     dueDate,
     paymentUrl: "#",
-    companyName: "StayShine",
+    companyName: "Pure Space Company",
   });
 
   async function send() {
@@ -286,7 +286,7 @@ function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => v
             <div className="flex gap-1 px-4 pt-3 pb-0 border-b border-gray-100">
               {(["details", "preview"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors capitalize -mb-px border-b-2 ${tab === t ? "border-[#163A70] text-[#163A70]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors capitalize -mb-px border-b-2 ${tab === t ? "border-[#1A3D2B] text-[#1A3D2B]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
                   {t === "details" ? "Details" : "Preview Email"}
                 </button>
               ))}
@@ -294,7 +294,7 @@ function SendInvoiceModal({ invoice, onClose }: { invoice: any; onClose: () => v
 
             {tab === "details" && (
               <div className="space-y-4 p-4">
-                <div className="bg-[#FAF8F3] rounded-lg p-3 text-sm text-[#163A70] space-y-0.5">
+                <div className="bg-[#F3FAF6] rounded-lg p-3 text-sm text-[#1A3D2B] space-y-0.5">
                   <p className="font-semibold">{invoice.invoiceNumber} — {formatCurrency(Number(invoice.total))}</p>
                   <p>{invoice.job?.title}</p>
                 </div>
@@ -392,7 +392,7 @@ function SendStatementModal({
 
   const previewHtml = buildStatementEmailHtml({
     clientName,
-    companyName: "StayShine",
+    companyName: "Pure Space Company",
     dateLabel,
     rows: previewRows,
     totalBilled: fmt(totalBilled),
@@ -434,7 +434,7 @@ function SendStatementModal({
             <div className="flex gap-1 px-4 pt-3 pb-0 border-b border-gray-100">
               {(["details", "preview"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors -mb-px border-b-2 ${tab === t ? "border-[#163A70] text-[#163A70]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors -mb-px border-b-2 ${tab === t ? "border-[#1A3D2B] text-[#1A3D2B]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
                   {t === "details" ? "Details" : "Preview Email"}
                 </button>
               ))}
@@ -442,7 +442,7 @@ function SendStatementModal({
 
             {tab === "details" && (
               <div className="space-y-4 p-4">
-                <div className="bg-[#FAF8F3] rounded-lg p-3 text-sm text-[#163A70] space-y-0.5">
+                <div className="bg-[#F3FAF6] rounded-lg p-3 text-sm text-[#1A3D2B] space-y-0.5">
                   <p className="font-semibold">{clientName}</p>
                   <p className="text-gray-500">{invoiceIds.length} invoice{invoiceIds.length !== 1 ? "s" : ""} · {fmt(totalBilled)} total</p>
                 </div>
@@ -549,7 +549,7 @@ function BulkSendModal({ invoices, onClose }: { invoices: any[]; onClose: () => 
                   <span className="text-gray-700 font-semibold">{formatCurrency(Number(inv.total))}</span>
                   {!st && <span className="text-xs text-gray-400">{inv.status}</span>}
                   {st === "pending" && <span className="text-xs text-gray-400">Queued</span>}
-                  {st === "sending" && <Loader2 className="w-4 h-4 animate-spin text-[#163A70]" />}
+                  {st === "sending" && <Loader2 className="w-4 h-4 animate-spin text-[#1A3D2B]" />}
                   {st === "done" && <CheckCircle className="w-4 h-4 text-emerald-500" />}
                   {st === "error" && <span className="text-xs text-red-500" title={errors[inv.id]}>Failed</span>}
                 </div>
@@ -746,7 +746,7 @@ export default function InvoicesPage() {
             { label: "Overdue", value: "OVERDUE" },
           ] as const).map((f) => (
             <button key={f.value} onClick={() => setStatusFilter(f.value as any)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === f.value ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === f.value ? "bg-[#1A3D2B] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {f.label}
             </button>
           ))}
@@ -770,7 +770,7 @@ export default function InvoicesPage() {
 
       {/* Client groups */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-[#163A70]" /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-[#1A3D2B]" /></div>
       ) : filteredGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
           <FileText className="w-8 h-8 opacity-40" />
@@ -795,7 +795,7 @@ export default function InvoicesPage() {
                 {/* Client header row */}
                 <button className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left" onClick={() => toggleClient(cid)}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A3D2B] to-[#4CAF82] flex items-center justify-center text-white text-sm font-bold shrink-0">
                       {name[0]?.toUpperCase() ?? "?"}
                     </div>
                     <div>
@@ -846,16 +846,16 @@ export default function InvoicesPage() {
                           return (
                             <div key={key}>
                               {/* Period sub-header */}
-                              <div className="px-5 py-2 bg-[#FAF8F3] border-b border-amber-100/60 flex items-center justify-between gap-2">
+                              <div className="px-5 py-2 bg-[#F3FAF6] border-b border-amber-100/60 flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="checkbox"
                                     checked={allChecked}
                                     ref={(el) => { if (el) el.indeterminate = someChecked; }}
                                     onChange={togglePeriodAll}
-                                    className="rounded border-gray-300 text-[#163A70] cursor-pointer"
+                                    className="rounded border-gray-300 text-[#1A3D2B] cursor-pointer"
                                   />
-                                  <span className="text-xs font-medium text-[#163A70]">{label}</span>
+                                  <span className="text-xs font-medium text-[#1A3D2B]">{label}</span>
                                   <span className="text-xs text-gray-400">
                                     · {periodJobs.length} job{periodJobs.length !== 1 ? "s" : ""}
                                     {periodTotal > 0 && ` · ${formatCurrency(periodTotal)}`}
@@ -900,7 +900,7 @@ export default function InvoicesPage() {
                                           {/* Checkbox */}
                                           <td className="pl-5 pr-2 py-3 w-8">
                                             <input type="checkbox" checked={isChecked} onChange={() => toggleJobSelect(job.id)}
-                                              className="rounded border-gray-300 text-[#163A70] cursor-pointer" />
+                                              className="rounded border-gray-300 text-[#1A3D2B] cursor-pointer" />
                                           </td>
                                           <td className="px-3 py-3 text-gray-500 whitespace-nowrap text-xs w-24">
                                             {new Date(job.scheduledStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -927,7 +927,7 @@ export default function InvoicesPage() {
                                             <div className="flex items-center gap-1 justify-end">
                                               {needsAction && (
                                                 <Button size="sm" variant="ghost" onClick={() => setGenerateJob(job)}
-                                                  className="text-[#163A70] hover:bg-[#FAF8F3] h-7 px-2 text-xs font-medium">
+                                                  className="text-[#1A3D2B] hover:bg-[#F3FAF6] h-7 px-2 text-xs font-medium">
                                                   <FilePlus className="w-3.5 h-3.5 mr-1" />{isDraft ? "Finalize" : "Invoice"}
                                                 </Button>
                                               )}
@@ -939,7 +939,7 @@ export default function InvoicesPage() {
                                                   </Button>
                                                   {(isPending || isOverdue || isDraft) && (
                                                     <Button size="sm" variant="ghost" onClick={() => setSendTarget(invWithEmail)}
-                                                      className="text-[#163A70] hover:bg-[#FAF8F3] h-7 px-2 text-xs font-medium" title="Send">
+                                                      className="text-[#1A3D2B] hover:bg-[#F3FAF6] h-7 px-2 text-xs font-medium" title="Send">
                                                       <Send className="w-3.5 h-3.5 mr-1" /> Send
                                                     </Button>
                                                   )}
@@ -985,7 +985,7 @@ export default function InvoicesPage() {
         const selectedWithInvoice = selectedJobs.filter((j) => j._invoice && ["PENDING","OVERDUE","DRAFT"].includes(j._invoice.status));
         const invoiceIdsToMark = selectedWithInvoice.map((j) => j._invoice.id);
         return (
-          <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#163A70] text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 whitespace-nowrap">
+          <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1A3D2B] text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 whitespace-nowrap">
             <ListChecks className="w-4 h-4 shrink-0" />
             <span className="text-sm font-medium">{selectedJobIds.size} job{selectedJobIds.size !== 1 ? "s" : ""} selected</span>
             <div className="flex items-center gap-2">

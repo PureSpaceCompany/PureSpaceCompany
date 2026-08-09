@@ -102,7 +102,7 @@ function ExtraChargesCard({ job, onSave, saving }: { job: any; onSave: (items: E
               onChange={(e) => setDesc(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addItem()}
               placeholder="e.g. Mattress cleaning"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#163A70]/30 focus:border-[#163A70]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3D2B]/30 focus:border-[#1A3D2B]"
             />
           </div>
           <div className="w-28">
@@ -115,7 +115,7 @@ function ExtraChargesCard({ job, onSave, saving }: { job: any; onSave: (items: E
               onChange={(e) => setPrice(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addItem()}
               placeholder="0.00"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#163A70]/30 focus:border-[#163A70]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3D2B]/30 focus:border-[#1A3D2B]"
             />
           </div>
           <Button size="sm" variant="outline" onClick={addItem} disabled={!desc.trim() || !price}>

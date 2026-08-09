@@ -35,10 +35,9 @@ const clientNav = [
   { href: "/client/invoices", label: "Invoices",  icon: FileText },
 ];
 
-// navy sidebar bg
-const NAVY = "#163A70";
-const NAVY_DARK = "#0f2a54";
-const GOLD = "#C8A46A";
+const NAVY = "#1A3D2B";
+const NAVY_DARK = "#122d1f";
+const GOLD = "#4CAF82";
 
 export function Sidebar() {
   const { data: session } = useSession();
@@ -74,18 +73,18 @@ export function Sidebar() {
   };
 
   const sidebarStyle = { backgroundColor: NAVY };
-  const borderStyle = { borderColor: "rgba(200,164,106,0.2)" };
+  const borderStyle = { borderColor: "rgba(76,175,130,0.2)" };
 
   return (
     <>
       {/* ── Desktop sidebar ── */}
       <aside className="hidden md:flex flex-col w-64 min-h-screen shrink-0" style={sidebarStyle}>
         <div className="px-5 pt-5 pb-4 border-b flex flex-col items-center text-center" style={borderStyle}>
-          <a href="https://stayshines.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
+          <a href="https://www.purespacecompany.com" target="_blank" rel="noopener noreferrer" className="inline-flex">
             <Logo size="md" variant="light" />
           </a>
           {session?.user?.name && (
-            <p className="text-xs mt-3 truncate" style={{ color: "rgba(200,164,106,0.85)" }}>
+            <p className="text-xs mt-3 truncate" style={{ color: "rgba(76,175,130,0.85)" }}>
               Welcome, {session.user.name as string}
             </p>
           )}
@@ -96,7 +95,7 @@ export function Sidebar() {
         </nav>
 
         <div className="px-3 py-4 border-t" style={borderStyle}>
-          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(200,164,106,0.6)" }}>
+          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(76,175,130,0.6)" }}>
             {session?.user?.email}
           </div>
           <button
@@ -143,7 +142,7 @@ export function Sidebar() {
         </nav>
 
         <div className="px-3 py-4 border-t" style={borderStyle}>
-          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(200,164,106,0.6)" }}>
+          <div className="px-3 py-2 text-xs truncate" style={{ color: "rgba(76,175,130,0.6)" }}>
             {session?.user?.email}
           </div>
           <button

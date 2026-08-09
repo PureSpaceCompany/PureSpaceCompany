@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { CalendarBoard } from "@/components/schedule/calendar-board";
 
-export const metadata = { title: "Schedule – StayShine" };
+export const metadata = { title: "Schedule – PureSpace" };
 
 export default function SchedulePage() {
   return (

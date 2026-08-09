@@ -69,7 +69,7 @@ export default function SettingsPage() {
   });
 
   const [form, setForm] = useState({
-    companyName: "StayShine",
+    companyName: "Pure Space Company",
     supportEmail: "",
     phone: "",
     invoicePaymentDays: 14,
@@ -242,11 +242,11 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Company Name</label>
-            <input className={inputClass} placeholder="StayShine" {...field("companyName")} />
+            <input className={inputClass} placeholder="Pure Space Company" {...field("companyName")} />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Support Email</label>
-            <input type="email" className={inputClass} placeholder="support@stayshine.com" {...field("supportEmail")} />
+            <input type="email" className={inputClass} placeholder="contact@purespacecompany.com" {...field("supportEmail")} />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Phone</label>

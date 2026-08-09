@@ -42,7 +42,7 @@ export function buildInvoiceEmailHtml({
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <tr>
-            <td style="background-color:#163A70;padding:32px 40px;text-align:center;">
+            <td style="background-color:#1A3D2B;padding:32px 40px;text-align:center;">
               <p style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">${e(companyName)}</p>
               <p style="margin:4px 0 0;color:#93c5fd;font-size:13px;">Professional Cleaning Services</p>
             </td>
@@ -64,7 +64,7 @@ export function buildInvoiceEmailHtml({
                         </td>
                         <td style="padding-bottom:12px;text-align:right;">
                           <p style="margin:0;font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Amount Due</p>
-                          <p style="margin:2px 0 0;font-size:22px;color:#1e3a5f;font-weight:700;">${e(amount)}</p>
+                          <p style="margin:2px 0 0;font-size:22px;color:#1A3D2B;font-weight:700;">${e(amount)}</p>
                         </td>
                       </tr>
                       <tr>
@@ -85,7 +85,7 @@ export function buildInvoiceEmailHtml({
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                 <tr>
                   <td align="center">
-                    <a href="${e(paymentUrl)}" style="display:inline-block;background-color:#163A70;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:8px;">
+                    <a href="${e(paymentUrl)}" style="display:inline-block;background-color:#1A3D2B;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:8px;">
                       Pay Now &mdash; ${e(amount)}
                     </a>
                   </td>
@@ -158,7 +158,7 @@ export function buildStatementEmailHtml({
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <tr>
-            <td style="background-color:#163A70;padding:32px 40px;text-align:center;">
+            <td style="background-color:#1A3D2B;padding:32px 40px;text-align:center;">
               <p style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">${e(companyName)}</p>
               <p style="margin:4px 0 0;color:#93c5fd;font-size:13px;">Account Statement</p>
             </td>

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ReportsRevenue, { type MonthBar } from "@/components/reports/reports-revenue";
 
-export const metadata = { title: "Reports – StayShine" };
+export const metadata = { title: "Reports – PureSpace" };
 export const dynamic = "force-dynamic";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

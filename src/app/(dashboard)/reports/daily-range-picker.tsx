@@ -32,7 +32,7 @@ export default function DailyRangePicker({
           onClick={() => select(key)}
           className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors ${
             activePreset === key
-              ? "bg-[#163A70] text-white"
+              ? "bg-[#1A3D2B] text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >

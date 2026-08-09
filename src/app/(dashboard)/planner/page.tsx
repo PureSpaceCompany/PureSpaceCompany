@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import DayPlanner from "@/components/planner/day-planner";
 
-export const metadata: Metadata = { title: "Day Planner – StayShine" };
+export const metadata: Metadata = { title: "Day Planner – PureSpace" };
 
 export default function PlannerPage() {
   return (

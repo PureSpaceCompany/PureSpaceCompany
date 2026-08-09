@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
-const NAVY = "#163A70";
-const GOLD = "#C8A46A";
+const NAVY = "#1A3D2B";
+const GOLD = "#4CAF82";
 
 async function fetchStaff() {
   const res = await fetch("/api/staff?active=false");
@@ -169,7 +169,7 @@ function PaymentSection({ staffId }: { staffId: string }) {
                   <input type="checkbox"
                     checked={selected.size === visibleJobs.length && visibleJobs.length > 0}
                     onChange={toggleAll}
-                    className="rounded border-gray-300 text-[#163A70] w-3 h-3" />
+                    className="rounded border-gray-300 text-[#1A3D2B] w-3 h-3" />
                 </th>
                 <th className="text-left px-2 py-2 font-medium">Job</th>
                 <th className="text-left px-2 py-2 font-medium hidden sm:table-cell">Date</th>
@@ -182,7 +182,7 @@ function PaymentSection({ staffId }: { staffId: string }) {
                   className={`border-b border-gray-50 last:border-0 transition-colors ${selected.has(job.id) ? "bg-blue-50" : "hover:bg-gray-50"}`}>
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selected.has(job.id)} onChange={() => toggleSelect(job.id)}
-                      className="rounded border-gray-300 text-[#163A70] w-3 h-3" />
+                      className="rounded border-gray-300 text-[#1A3D2B] w-3 h-3" />
                   </td>
                   <td className="px-2 py-2">
                     <p className="font-medium text-gray-800 truncate max-w-[130px]">{job.title}</p>

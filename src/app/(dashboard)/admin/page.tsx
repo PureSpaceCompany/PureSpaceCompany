@@ -13,7 +13,7 @@ import Link from "next/link";
 import { JobStatus } from "@/types";
 import ThisMonthChart, { type DayData } from "@/components/dashboard/this-month-chart";
 
-export const metadata = { title: "Dashboard – StayShine" };
+export const metadata = { title: "Dashboard – PureSpace" };
 export const dynamic = "force-dynamic";
 
 const TZ = "America/Chicago";
@@ -63,7 +63,7 @@ const STATUS_DOT: Record<JobStatus, string> = {
   IN_PROGRESS:"bg-amber-400",
   COMPLETED:  "bg-emerald-500",
   CANCELLED:  "bg-red-400",
-  NO_SHOW:    "bg-[#C8A46A]",
+  NO_SHOW:    "bg-[#4CAF82]",
 };
 
 export default async function AdminDashboard() {
@@ -259,8 +259,8 @@ export default async function AdminDashboard() {
       value: clientCount,
       sub: `${completedCount} jobs completed`,
       icon: Briefcase,
-      iconBg: "bg-[#163A70]",
-      border: "border-t-4 border-t-[#C8A46A]",
+      iconBg: "bg-[#1A3D2B]",
+      border: "border-t-4 border-t-[#4CAF82]",
       href: "/clients",
     },
     {
@@ -290,7 +290,7 @@ export default async function AdminDashboard() {
               {now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: TZ })}
             </p>
           </div>
-          <Link href="/jobs?new=1" className="flex items-center gap-1.5 text-sm font-medium text-[#163A70] bg-[#FAF8F3] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors shrink-0">
+          <Link href="/jobs?new=1" className="flex items-center gap-1.5 text-sm font-medium text-[#1A3D2B] bg-[#F3FAF6] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors shrink-0">
             New Job <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -310,7 +310,7 @@ export default async function AdminDashboard() {
                   <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
               </div>
-              <p className="text-xs text-[#163A70] mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <p className="text-xs text-[#1A3D2B] mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 View <ArrowRight className="w-3 h-3" />
               </p>
             </Link>
@@ -336,7 +336,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold text-gray-900">Job Status</h2>
-              <Link href="/jobs" className="text-xs text-[#163A70] hover:underline flex items-center gap-1">
+              <Link href="/jobs" className="text-xs text-[#1A3D2B] hover:underline flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -381,9 +381,9 @@ export default async function AdminDashboard() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <h2 className="font-semibold text-gray-900">Upcoming Jobs</h2>
-                <span className="text-xs font-medium bg-[#FAF8F3] text-[#163A70] px-2 py-0.5 rounded-full">{upcomingJobs.length}</span>
+                <span className="text-xs font-medium bg-[#F3FAF6] text-[#1A3D2B] px-2 py-0.5 rounded-full">{upcomingJobs.length}</span>
               </div>
-              <Link href="/schedule" className="text-xs text-[#163A70] hover:underline flex items-center gap-1">
+              <Link href="/schedule" className="text-xs text-[#1A3D2B] hover:underline flex items-center gap-1">
                 Schedule <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -404,7 +404,7 @@ export default async function AdminDashboard() {
                       href={`/jobs/${job.id}`}
                       className="flex items-start gap-3 px-4 md:px-6 py-3 hover:bg-gray-50 transition-colors"
                     >
-                      <div className={`shrink-0 w-11 text-center rounded-lg py-1.5 ${today ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600"}`}>
+                      <div className={`shrink-0 w-11 text-center rounded-lg py-1.5 ${today ? "bg-[#1A3D2B] text-white" : "bg-gray-100 text-gray-600"}`}>
                         <p className="text-[10px] font-medium">{today ? "TODAY" : start.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}</p>
                         <p className="text-base font-bold leading-tight">{start.getDate()}</p>
                       </div>
@@ -476,14 +476,14 @@ export default async function AdminDashboard() {
             <div className="bg-white rounded-xl shadow-sm">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-900">Top Clients</h2>
-                <Link href="/clients" className="text-xs text-[#163A70] hover:underline flex items-center gap-1">
+                <Link href="/clients" className="text-xs text-[#1A3D2B] hover:underline flex items-center gap-1">
                   All <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
               <div className="divide-y divide-gray-50">
                 {topClients.map((c) => (
                   <div key={c.id} className="flex items-center gap-3 px-5 py-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#163A70] to-[#C8A46A] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1A3D2B] to-[#4CAF82] flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {(c.company ?? c.firstName ?? "?")[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -492,7 +492,7 @@ export default async function AdminDashboard() {
                     </div>
                     <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#163A70] rounded-full"
+                        className="h-full bg-[#1A3D2B] rounded-full"
                         style={{ width: `${Math.min(100, (c._count.jobs / (topClients[0]?._count.jobs || 1)) * 100)}%` }}
                       />
                     </div>

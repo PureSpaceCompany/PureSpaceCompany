@@ -128,8 +128,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const appSettings = await prisma.appSettings.findUnique({ where: { id: "default" } });
-    const companyName = appSettings?.companyName ?? "StayShine";
-    const appUrl = process.env.NEXTAUTH_URL ?? "https://www.stayshines.com";
+    const companyName = appSettings?.companyName ?? "Pure Space Company";
+    const appUrl = process.env.NEXTAUTH_URL ?? "https://www.purespacecompany.com";
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not configured");

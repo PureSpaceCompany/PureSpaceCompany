@@ -329,7 +329,7 @@ model Invoice {
 
 model AppSettings {
   id                  String  @id @default("default")
-  companyName         String  @default("StayShine")
+  companyName         String  @default("Pure Space Company")
   supportEmail        String  @default("")
   phone               String  @default("")
   invoicePaymentDays  Int     @default(14)

@@ -27,8 +27,8 @@ type SortDir = "asc" | "desc";
 function SortIcon({ field, active, dir }: { field: SortField; active: SortField; dir: SortDir }) {
   if (field !== active) return <ChevronsUpDown className="w-3.5 h-3.5 opacity-30 ml-1 inline" />;
   return dir === "asc"
-    ? <ChevronUp className="w-3.5 h-3.5 ml-1 inline text-[#163A70]" />
-    : <ChevronDown className="w-3.5 h-3.5 ml-1 inline text-[#163A70]" />;
+    ? <ChevronUp className="w-3.5 h-3.5 ml-1 inline text-[#1A3D2B]" />
+    : <ChevronDown className="w-3.5 h-3.5 ml-1 inline text-[#1A3D2B]" />;
 }
 
 export default function JobsPage() {
@@ -116,7 +116,7 @@ export default function JobsPage() {
     return list;
   }, [jobs, search, dateFilter, sortField, sortDir]);
 
-  const thClass = "text-left px-3 md:px-6 py-3 font-medium cursor-pointer hover:text-[#163A70] select-none whitespace-nowrap";
+  const thClass = "text-left px-3 md:px-6 py-3 font-medium cursor-pointer hover:text-[#1A3D2B] select-none whitespace-nowrap";
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -161,7 +161,7 @@ export default function JobsPage() {
           {STATUS_FILTERS.map((f) => (
             <button key={f.value} onClick={() => setStatusFilter(f.value)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === f.value ? "bg-[#163A70] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                statusFilter === f.value ? "bg-[#1A3D2B] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {f.label}
             </button>
           ))}
